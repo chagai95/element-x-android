@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2026 Chagai Friedlander
+  ~
+  ~ SPDX-License-Identifier: AGPL-3.0-only
+  -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Ring at an exact moment, like a clock alarm. USE_EXACT_ALARM is granted on install;
+         SCHEDULE_EXACT_ALARM is the fallback path for Android 12 (API 31/32), where the user
+         can revoke it and the scheduler degrades to setExactAndAllowWhileIdle. -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission
+        android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        android:maxSdkVersion="32" />
+    <!-- Show the alarm screen over the lock screen. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- "Call now" uses ACTION_DIAL, which opens the dialer with the number filled in and needs
+         no permission; the app never places a call itself. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.DIAL" />
+            <data android:scheme="tel" />
+        </intent>
+    </queries>
+
+    <application>
+        <activity
+            android:name=".ui.CallReminderAlarmActivity"
+            android:configChanges="screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:showOnLockScreen="true"
+            android:taskAffinity="io.element.android.features.callreminders"
+            android:turnScreenOn="true" />
+
+        <activity
+            android:name=".ui.CallRemindersActivity"
+            android:configChanges="screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode"
+            android:exported="true"
+            android:label="@string/call_reminders_title"
+            android:launchMode="singleTask"
+            android:taskAffinity="io.element.android.features.callreminders" />
+
+        <receiver
+            android:name=".receivers.CallReminderAlarmReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <receiver
+            android:name=".receivers.CallReminderActionReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <receiver
+            android:name=".receivers.BootCompletedReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>
