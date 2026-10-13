@@ -184,11 +184,18 @@ else
   git tag -a "$TAG" -m "Matrix Chat ${VERSION}"
   echo "  tagged ${TAG}"
 fi
-# Keep the local bare mirror in step (never pushes anywhere public on its own). A mirror that
-# cannot be written must not take the release down with it, hence the explicit || true: the APK is
-# already built, verified and published by this point.
-if [ -d "${BUILD_ROOT}/element-x-android.git" ]; then
-  if git push -q --tags "${BUILD_ROOT}/element-x-android.git" chagai/main 2>/dev/null; then
+# Keep the local bare mirror in step (it never reaches anywhere public on its own).
+#
+# Note the direction: the mirror FETCHES from here rather than this repo pushing to it. This
+# working copy is a partial (blobless) clone, so `git push` refuses — pack-objects will not
+# lazily fetch the blobs it would have to walk. A fetch lets the mirror say what it already has,
+# and since it holds all of upstream only the fork's own new objects move. A mirror that cannot
+# be written is a warning, not a reason to stop: the APK is already built, verified, published
+# and reachable by this point.
+MIRROR="${BUILD_ROOT}/element-x-android.git"
+if [ -d "$MIRROR" ]; then
+  if git -C "$MIRROR" fetch -q "$HERE" \
+      "refs/heads/chagai/main:refs/heads/chagai/main" "refs/tags/*:refs/tags/*" 2>/dev/null; then
     echo "  mirrored to the local bare repo"
   else
     echo "  WARNING: could not update the local bare mirror (continuing)" >&2
