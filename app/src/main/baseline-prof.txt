@@ -1,0 +1,104 @@
+# Baseline profile — Matrix Chat (Chagai fork)
+#
+# What this file is: a list of classes and methods ART should compile ahead of time when the
+# app is installed, instead of interpreting them and JIT-compiling them while the user is
+# waiting. AGP merges it into `assets/dexopt/baseline.prof`, and `androidx.profileinstaller`
+# (already a dependency, via Compose) writes it to the ART profile on first run.
+#
+# Why it is written by hand rather than generated: generating one properly means a
+# `androidx.baselineprofile` Gradle plugin, a macrobenchmark module and a Play-Services-free
+# device to record on — a lot of machinery for a personal build, and it needs the network at
+# build time, which this box's capped offline builds do not have. A hand-written profile is the
+# documented alternative: it is less precise than a recorded one (it cannot know which *branches*
+# are hot) but it covers the right code, and the cost of being approximate is only that a few
+# methods are compiled that need not be.
+#
+# What is already covered without this file: AndroidX and Compose ship their own baseline
+# profiles, which AGP merges in (`mergeFdroidReleaseArtProfile`). That is where the ~9 KB profile
+# in the APK before this file came from. None of it covers **this app's own** startup path, which
+# is what the rules below add.
+#
+# Syntax (see https://developer.android.com/topic/performance/baselineprofiles):
+#   H = "hot"      — called often; compile it
+#   S = "startup"  — on the startup path; compile it and keep it warm
+#   P = "post-startup"
+#   L<class>;      — the class itself, so its <clinit> and field layout are prepared
+#   ->**(**)**     — every method, any signature
+#
+# Ordering is irrelevant; duplicates are harmless.
+
+# --------------------------------------------------------------------------------------------
+# The application object and the first activity — everything before a pixel is drawn.
+# --------------------------------------------------------------------------------------------
+HSPLio/element/android/x/ElementXApplication;->**(**)**
+Lio/element/android/x/ElementXApplication;
+HSPLio/element/android/x/MainActivity;->**(**)**
+Lio/element/android/x/MainActivity;
+HSPLio/element/android/x/MainNode;->**(**)**
+Lio/element/android/x/MainNode;
+
+# androidx.startup initializers run synchronously before onCreate returns, so they are
+# unambiguously on the critical path.
+HSPLio/element/android/x/initializer/**->**(**)**
+Lio/element/android/x/initializer/**;
+
+# --------------------------------------------------------------------------------------------
+# Dependency injection.
+#
+# The generated Metro graph is built during Application.onCreate and is one large chain of
+# constructor calls — exactly the shape that is slow to interpret and fast once compiled.
+# --------------------------------------------------------------------------------------------
+HSPLio/element/android/x/di/**->**(**)**
+Lio/element/android/x/di/**;
+
+# --------------------------------------------------------------------------------------------
+# Navigation and the root flow: what decides whether to show sign-in or the room list.
+# --------------------------------------------------------------------------------------------
+HSPLio/element/android/appnav/**->**(**)**
+Lio/element/android/appnav/**;
+
+# --------------------------------------------------------------------------------------------
+# The first two screens a person actually sees: onboarding/sign-in on a new install, the room
+# list on every launch after that.
+# --------------------------------------------------------------------------------------------
+HSPLio/element/android/features/onboarding/impl/**->**(**)**
+Lio/element/android/features/onboarding/impl/**;
+HSPLio/element/android/features/login/impl/**->**(**)**
+Lio/element/android/features/login/impl/**;
+HSPLio/element/android/features/roomlist/impl/**->**(**)**
+Lio/element/android/features/roomlist/impl/**;
+
+# --------------------------------------------------------------------------------------------
+# The design system. Compound's theme, colour tokens and the handful of components every screen
+# is built from are touched during the first composition of every single screen.
+# --------------------------------------------------------------------------------------------
+HSPLio/element/android/compound/**->**(**)**
+Lio/element/android/compound/**;
+HSPLio/element/android/libraries/designsystem/theme/**->**(**)**
+Lio/element/android/libraries/designsystem/theme/**;
+HSPLio/element/android/libraries/architecture/**->**(**)**
+Lio/element/android/libraries/architecture/**;
+
+# --------------------------------------------------------------------------------------------
+# The Matrix layer: session restore and the room list run while the first frame is being drawn,
+# so leaving them to the JIT makes the first screen janky even once it is visible.
+# --------------------------------------------------------------------------------------------
+HSPLio/element/android/libraries/matrix/impl/**->**(**)**
+Lio/element/android/libraries/matrix/impl/**;
+HSPLio/element/android/libraries/matrix/api/**->**(**)**
+Lio/element/android/libraries/matrix/api/**;
+HSPLio/element/android/libraries/sessionstorage/**->**(**)**
+Lio/element/android/libraries/preferences/impl/**;
+
+# --------------------------------------------------------------------------------------------
+# This fork's own features.
+#
+# Call reminders are on the startup path whether or not the user opens them: the session
+# observer starts with the session, and the alarm receiver, the ring service and the alarm
+# screen all run cold — an alarm at 07:00 is, by definition, the first thing the process does
+# that day, and the one place where interpreting code is actually felt.
+# --------------------------------------------------------------------------------------------
+HSPLio/element/android/features/callreminders/impl/**->**(**)**
+Lio/element/android/features/callreminders/impl/**;
+HSPLio/element/android/features/notes/impl/**->**(**)**
+Lio/element/android/features/notes/impl/**;

@@ -71,7 +71,6 @@ class NotesStore private constructor(private val file: File) {
             else -> Note.PendingAction.Update
         }
         val saved = note.copy(
-            title = note.title.ifBlank { Note.deriveTitle(note.body, note.checklist) },
             eventId = note.eventId ?: existing?.eventId,
             updatedAtMillis = System.currentTimeMillis(),
             pending = action,
@@ -84,6 +83,28 @@ class NotesStore private constructor(private val file: File) {
     fun edit(id: String, transform: (Note) -> Note): Note? {
         val existing = get(id) ?: return null
         return save(transform(existing))
+    }
+
+    /**
+     * Called when the user has finished with a note: names it, if they did not.
+     *
+     * Deliberately **not** done in [save]. Saving happens on every keystroke, so deriving there
+     * named the note after the first thing typed and then never changed it again — typing
+     * "Ask the landlord about the heating" produced a note called "Ask", because by the second
+     * keystroke the title was no longer blank and the derivation stopped. Supernote got this
+     * right by doing it in `onStop()`; this is the same moment.
+     *
+     * [io.element.android.features.notes.impl.parser.NoteWireFormat.encode] derives too, as a
+     * safety net for a note that reaches the room without passing through here.
+     */
+    fun finishEditing(id: String): Note? {
+        val existing = get(id) ?: return null
+        // An empty checklist row is how a new item is added, so there is usually one left over
+        // when the user walks away. Dropping them here keeps an empty tickbox off the card.
+        val checklist = existing.checklist.filter { it.text.isNotBlank() }
+        val title = existing.title.ifBlank { Note.deriveTitle(existing.body, checklist) }
+        if (title == existing.title && checklist == existing.checklist) return existing
+        return save(existing.copy(title = title, checklist = checklist))
     }
 
     /**

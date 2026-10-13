@@ -85,8 +85,10 @@ class NotesActivity : AppCompatActivity() {
                     NoteEditorScreen(
                         note = editing,
                         onBack = {
-                            // A note nobody typed anything into is not worth keeping.
-                            if (editing.isBlank) store.delete(editing.id)
+                            // A note nobody typed anything into is not worth keeping; one that
+                            // was never given a title gets named from its first line here, which
+                            // is the moment the user has finished with it.
+                            if (editing.isBlank) store.delete(editing.id) else store.finishEditing(editing.id)
                             editingId = null
                         },
                         onChange = { changed ->
@@ -139,6 +141,9 @@ class NotesActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
+        // Leaving by the home button or the recents switcher is also "finished with it", so an
+        // untitled note is named here too, not only when Back is pressed.
+        store.all().filter { it.title.isBlank() && !it.isBlank }.forEach { store.finishEditing(it.id) }
         // The home-screen widget reads the same store, so it only has to be told to redraw. Done
         // on pause rather than on every keystroke: nothing on the home screen is visible while
         // the editor is open, and a broadcast per character would be absurd.
