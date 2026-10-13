@@ -2,6 +2,10 @@
 
 Changes made in this fork, newest first.
 
+## 26.09.4-chagai.7 — 2026-10-13
+
+- A notes widget for your home screen: your pinned notes and a + that opens a blank one, one tap from anywhere. Two fixes found by driving the app on a test phone: a note you did not title used to end up called just the first word you typed (now it takes its name from the first line when you finish writing), and the empty tick box left behind after adding a checklist item no longer shows up on the card. Under the hood: the app now ships a startup profile so the first launches after installing are quicker.
+
 ## 26.09.4-chagai.6 — 2026-10-13
 
 - Notes are in. Each note is a message in a private 📝 Notes room on your own server, so they sync to every device, survive a reinstall, are encrypted, and you share a notebook by inviting someone to it. A grid of coloured notes you can pin, checklists you tick straight from the card, instant search as you type (try typing 'missed reminders'), a trash you can undo, and a due time that rings with the full loud alarm. Share text from any app straight into a note, and long-press the app icon for New note / Notes / Call reminders. Also: the test alarm now opens the full alarm screen, like a real one does.

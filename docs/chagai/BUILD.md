@@ -103,6 +103,72 @@ Outputs land in `app/build/outputs/apk/fdroid/release/`:
 - `app-fdroid-universal-release.apk` — all four ABIs, roughly twice the size
 - plus `armeabi-v7a`, `x86`, `x86_64` splits
 
+## Performance — what was already right, and what was missing
+
+Measured on the emulator clone (x86_64, Android 13) in round 2. The same device before and after,
+same protocol, so the comparison is the only thing being claimed — these are not phone numbers.
+
+### Already right, upstream
+
+- **R8 is on** for `release` and `nightly` (`optimization { enable = true }` in
+  `app/build.gradle.kts` — the AGP 9 replacement for `isMinifyEnabled`), with the fork's keep
+  rules under `app/proguard/`.
+- **Resources are already shrunk** — `app/build/intermediates/shrunk_resources_binary_format/`
+  exists for every release build.
+- **`androidx.profileinstaller` is already a dependency** (transitively, via Compose), and AGP
+  already merges every library's ART profile (`mergeFdroidReleaseArtProfile`).
+
+So there was nothing to turn on. The gap was elsewhere.
+
+### What was missing: the app's own baseline profile
+
+```
+$ adb shell dumpsys package dexopt | grep -A2 website.chagai.matrixchat
+  x86_64: [status=verify] [reason=install]
+```
+
+`status=verify` means **none of the app's own code is compiled ahead of time** — every class on
+the startup path is interpreted and JIT-compiled while the user waits. The APK's
+`assets/dexopt/baseline.prof` was 9,686 bytes, all of it AndroidX and Compose rules merged in by
+AGP; nothing covering `io.element.android.*`.
+
+`app/src/main/baseline-prof.txt` now covers the application object, `MainActivity`, the
+androidx.startup initializers, the generated DI graph, appnav, onboarding/login/roomlist,
+Compound and the design system, the Matrix layer, and both fork features (call reminders are on
+the cold path by definition — an alarm at 07:00 is the first thing the process does that day).
+
+It is **hand-written rather than recorded**. Recording one properly needs the
+`androidx.baselineprofile` Gradle plugin and a macrobenchmark module, which means new
+dependencies resolved at build time — and these builds are capped and run `--offline`. A
+hand-written profile is the documented alternative: less precise (it cannot know which *branches*
+are hot), but it covers the right code, and being approximate only costs a few methods compiled
+that need not have been.
+
+### Measuring it yourself
+
+```bash
+E="sudo docker exec android-clone-clone1 adb"
+# Put the package back to exactly its post-install compilation state.
+$E shell cmd package compile --reset website.chagai.matrixchat
+$E shell dumpsys package dexopt | grep -A2 website.chagai.matrixchat   # status=?
+# Then, per run: force-stop, wait, start with -W, read TotalTime.
+$E shell am force-stop website.chagai.matrixchat
+$E shell am start -W -n website.chagai.matrixchat/io.element.android.x.MainActivity
+```
+
+Discard the first run after an install — that is the one where the filesystem cache is cold for
+reasons that have nothing to do with the app.
+
+Jank on a specific screen:
+
+```bash
+$E shell dumpsys gfxinfo website.chagai.matrixchat | head -40
+```
+
+### The numbers
+
+See the round-2 table at the bottom of `CHANGELOG-chagai.md`.
+
 ## Keeping up with upstream
 
 ```bash
