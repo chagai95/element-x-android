@@ -154,9 +154,13 @@ do. Pinned notes come first.
 - The **title may be left empty**: it is derived from the first line when saved, cut at 25
   characters and trimmed back to the last space so it never breaks a word. Straight from
   Supernote, and the reason you never have to name a thought before writing it down.
-- Colours are **a pastel mixed over the theme's own surface**, not a fixed hex. In light mode the
-  pastel dominates and a note looks like paper; in dark mode the dark surface dominates and the
-  pastel is a hint of hue. A sticky-note yellow that looks right on white is a torch in the dark.
+- Colours are **an explicit pair of values per colour**, one per theme. The first version mixed
+  a pastel over a semantic Compound colour and dark mode exposed why that is wrong: "Butter" was
+  built on `bgCriticalSubtle`, which is a *red* in dark mode, so a yellow note rendered maroon.
+  Semantic colours mean "this is an error", not "this is warm", and their hue is free to change
+  between themes — which is exactly what a note colour must not do. Light gets paper pastels;
+  dark gets the same hue at a lightness that reads as a tinted dark surface, because a
+  sticky-note yellow that looks right on white is a torch at night.
 - A note with **no content at all is discarded** when you leave it, so opening the editor by
   accident costs nothing.
 

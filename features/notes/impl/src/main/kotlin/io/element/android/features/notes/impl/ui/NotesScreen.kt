@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -353,34 +354,29 @@ private fun EmptyState(searching: Boolean, showingTrash: Boolean) {
 /**
  * A note's colour, resolved against the current theme.
  *
- * Deliberately a tint of the Compound canvas rather than a fixed hex: a sticky-note yellow that
- * looks right on white is a headache torch in dark mode. Each colour is the same hue at a
- * lightness the theme can live with.
- */
-@Composable
-internal fun NoteColour.background() = when (this) {
-    NoteColour.None -> ElementTheme.colors.bgSubtleSecondary
-    NoteColour.Butter -> ElementTheme.colors.bgCriticalSubtle.blendWith(0xFFFFF3C4)
-    NoteColour.Sky -> ElementTheme.colors.bgSubtlePrimary.blendWith(0xFFD6ECFF)
-    NoteColour.Mint -> ElementTheme.colors.bgSuccessSubtle.blendWith(0xFFD6F5E4)
-    NoteColour.Rose -> ElementTheme.colors.bgCriticalSubtle.blendWith(0xFFFFDCE4)
-    NoteColour.Lilac -> ElementTheme.colors.bgSubtlePrimary.blendWith(0xFFE8DEFF)
-    NoteColour.Sand -> ElementTheme.colors.bgSubtleSecondary.blendWith(0xFFF2E5D0)
-}
-
-/**
- * Mixes a pastel over the theme's own surface.
+ * Each colour is a **pair of explicit values**, one for each theme, rather than a pastel mixed
+ * over a semantic Compound colour. The first version did the latter and it was wrong in a way
+ * only dark mode revealed: "Butter" was built on `bgCriticalSubtle`, which is a *red* in dark
+ * mode, so a yellow note rendered maroon. Semantic colours mean "this is an error", not "this is
+ * warm", and their hue is free to change between themes — which is exactly what a note colour
+ * must not do.
  *
- * In light mode the pastel dominates and the note looks like paper; in dark mode the theme's dark
- * surface dominates and the pastel is only a hint of hue, which is what keeps a dark-mode notes
- * wall readable instead of glowing.
+ * The light values are paper pastels. The dark values are the same hue at a lightness that reads
+ * as a tinted dark surface: a sticky-note yellow that looks right on white is a torch at night,
+ * so dark mode gets the hue and not the brightness.
  */
 @Composable
-private fun androidx.compose.ui.graphics.Color.blendWith(pastel: Long): androidx.compose.ui.graphics.Color {
-    val tint = androidx.compose.ui.graphics.Color(pastel)
-    val isLight = ElementTheme.isLightTheme
-    val weight = if (isLight) 0.85f else 0.12f
-    return androidx.compose.ui.graphics.lerp(this, tint, weight)
+internal fun NoteColour.background(): Color {
+    val light = ElementTheme.isLightTheme
+    return when (this) {
+        NoteColour.None -> ElementTheme.colors.bgSubtleSecondary
+        NoteColour.Butter -> if (light) Color(0xFFFFF3C4) else Color(0xFF3B3421)
+        NoteColour.Sky -> if (light) Color(0xFFD6ECFF) else Color(0xFF1E2B3A)
+        NoteColour.Mint -> if (light) Color(0xFFD6F5E4) else Color(0xFF1C3329)
+        NoteColour.Rose -> if (light) Color(0xFFFFDCE4) else Color(0xFF3A232B)
+        NoteColour.Lilac -> if (light) Color(0xFFE8DEFF) else Color(0xFF292340)
+        NoteColour.Sand -> if (light) Color(0xFFF2E5D0) else Color(0xFF332C22)
+    }
 }
 
 private const val CHECKLIST_PREVIEW = 4
