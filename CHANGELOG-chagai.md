@@ -2,6 +2,10 @@
 
 Changes made in this fork, newest first.
 
+## 26.09.4-chagai.4 — 2026-10-13
+
+- Small fix on top of the version I sent a few minutes ago: the 60-minute snooze button was being squashed to "…" — install this one instead.
+
 ## 26.09.4-chagai.3 — 2026-10-13
 
 - Call reminders: ask for "remind me to call X at 15:00" and the phone rings like a proper alarm — full screen, alarm sound, over the lock screen, through silent mode.
