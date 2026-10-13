@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Strings for Matrix Chat's notes. Fork-only, so they live in the fork's own file and are never
+  ~ touched by an upstream translation import.
+  ~
+  ~ SPDX-License-Identifier: AGPL-3.0-only
+  -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="notes_title">Notes</string>
+    <string name="notes_title_trash">Trash</string>
+    <string name="notes_capture_label">New note in Matrix Chat</string>
+    <string name="notes_captured">Saved to your notes</string>
+    <string name="notes_untitled">Untitled</string>
+    <string name="notes_not_synced">Not synced yet</string>
+
+    <string name="notes_search_placeholder">Search your notes</string>
+    <string name="notes_empty_title">No notes yet</string>
+    <string name="notes_empty_subtitle">Tap + to write one, or share text from any app straight into your notes. They sync to your server, so they are on every device.</string>
+    <string name="notes_empty_search">Nothing matches that</string>
+    <string name="notes_empty_trash">The trash is empty</string>
+    <string name="notes_checklist_progress">%1$d of %2$d done</string>
+    <string name="notes_checklist_more">+%1$d more</string>
+
+    <string name="notes_action_new">New note</string>
+    <string name="notes_action_pin">Pin</string>
+    <string name="notes_action_trash">Trash</string>
+    <string name="notes_action_restore">Restore</string>
+    <string name="notes_action_delete_forever">Delete for good</string>
+    <string name="notes_action_grid_view">Grid</string>
+    <string name="notes_action_list_view">List</string>
+    <string name="notes_action_remove_item">Remove</string>
+    <string name="notes_action_change">Change</string>
+    <string name="notes_action_clear">Clear</string>
+
+    <string name="notes_editor_title">Note</string>
+    <string name="notes_editor_title_placeholder">Title (optional — it will name itself)</string>
+    <string name="notes_editor_body_placeholder">Write anything…</string>
+    <string name="notes_editor_colour">Colour</string>
+    <string name="notes_editor_checklist">Checklist</string>
+    <string name="notes_editor_add_item">Add an item</string>
+    <string name="notes_editor_no_reminder">No reminder</string>
+    <string name="notes_editor_set_reminder">Set</string>
+    <string name="notes_editor_reminder_subtitle">Rings like an alarm, as loud as a call reminder</string>
+    <string name="notes_editor_synced">Saved and synced to your server</string>
+    <string name="notes_editor_not_synced">Saved on this phone — it will sync when there is a connection</string>
+</resources>

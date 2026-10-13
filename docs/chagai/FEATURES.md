@@ -55,8 +55,28 @@ A reminder to **phone someone** that rings like a clock alarm instead of arrivin
 notification: full screen, over the lock screen, on the alarm audio stream so it cuts through
 silent and Do Not Disturb, with **Call now / Done / Snooze**.
 
-Implemented in `features/callreminders/{api,impl}`; the full design, the event schema and the
-server side live in `CALL-REMINDERS.md`.
+Since round 2 it is **properly loud**: a foreground service takes the alarm stream to maximum
+for the duration (and puts it back), plays one of five tones generated from scratch by
+`tools/chagai/make_tones.py`, ramps from 40 % to full over ten seconds, and vibrates on a
+repeating waveform — because a notification channel can only ever be as loud as the alarm volume
+already is, which is what "it's not ringing loudly" meant.
+
+Implemented in `features/callreminders/{api,impl}`; the full design, the event schema, the
+loudness work and the server side live in `CALL-REMINDERS.md`.
+
+## 5. Notes
+
+Notes built into the app, where **each note is a Matrix message in a private "📝 Notes" room** —
+so they sync across devices, survive a reinstall, are end-to-end encrypted, keep their own edit
+history, can be read in any Matrix client, and are shared by inviting someone to the room.
+
+A grid of coloured, pinnable notes with checklists, instant in-memory search, trash and restore,
+a due time that rings through the full call-reminder alarm, share-sheet capture from any app, and
+launcher shortcuts.
+
+Inspired feature-by-feature by Chagai's own 2019 note app, **Supernote** — `SUPERNOTE-INVENTORY.md`
+records what it had and what came across; `NOTES.md` is the design. Implemented in
+`features/notes/{api,impl}`.
 
 ---
 
