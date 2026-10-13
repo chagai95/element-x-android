@@ -71,3 +71,13 @@ sealed interface AccountProvider {
 val matrixOrgAccountProvider = AccountProvider.Generic(
     serverName = "matrix.org",
 )
+
+/**
+ * Chagai fork: the account provider the app defaults to and pre-fills on the sign-in screen.
+ *
+ * The user can still change it ("Change account provider" on the sign-in screen), and the
+ * last provider they signed in to wins over this default — see `AccountProviderDataSource`.
+ */
+val defaultAccountProvider = AccountProvider.Generic(
+    serverName = "chagai.website",
+)

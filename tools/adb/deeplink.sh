@@ -7,13 +7,13 @@
 # Please see LICENSE files in the repository root for full details.
 
 # Format is:
-# elementx://open/{sessionId} to open a session
-# elementx://open/{sessionId}/{roomId} to open a room
-# elementx://open/{sessionId}/{roomId}/{eventId} to open a thread
+# matrixchat://open/{sessionId} to open a session
+# matrixchat://open/{sessionId}/{roomId} to open a room
+# matrixchat://open/{sessionId}/{roomId}/{eventId} to open a thread
 
 # Open a session
-# adb shell am start -a android.intent.action.VIEW -d elementx://open/@benoit10518:matrix.org
+# adb shell am start -a android.intent.action.VIEW -d matrixchat://open/@benoit10518:matrix.org
 # Open a room
-adb shell am start -a android.intent.action.VIEW -d elementx://open/@benoit10518:matrix.org/!dehdDVSkabQLZFYrgo:matrix.org
+adb shell am start -a android.intent.action.VIEW -d matrixchat://open/@benoit10518:matrix.org/!dehdDVSkabQLZFYrgo:matrix.org
 # Open a thread
-# adb shell am start -a android.intent.action.VIEW -d elementx://open/@benoit10518:matrix.org/!dehdDVSkabQLZFYrgo:matrix.org/\\\$threadId
+# adb shell am start -a android.intent.action.VIEW -d matrixchat://open/@benoit10518:matrix.org/!dehdDVSkabQLZFYrgo:matrix.org/\\\$threadId

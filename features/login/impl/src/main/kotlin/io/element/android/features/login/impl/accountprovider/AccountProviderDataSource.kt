@@ -14,7 +14,7 @@ import dev.zacsweers.metro.SingleIn
 import io.element.android.features.enterprise.api.EnterpriseService
 import io.element.android.libraries.di.annotations.AppCoroutineScope
 import io.element.android.libraries.matrix.api.accountprovider.AccountProvider
-import io.element.android.libraries.matrix.api.accountprovider.matrixOrgAccountProvider
+import io.element.android.libraries.matrix.api.accountprovider.defaultAccountProvider
 import io.element.android.libraries.preferences.api.store.AppPreferencesStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,10 +32,10 @@ class AccountProviderDataSource(
     @AppCoroutineScope private val coroutineScope: CoroutineScope,
 ) {
     // The provider used when the user has not selected one: an enterprise/MDM-configured provider,
-    // else matrix.org. The most recently used provider (from history) can override it, see init.
+    // else the fork default (chagai.website). The most recently used provider (from history) can override it, see init.
     private val configuredAccountProvider = enterpriseService.accountProviderAllowList()
         .firstOrNull()
-        ?: matrixOrgAccountProvider
+        ?: defaultAccountProvider
 
     private val accountProvider: MutableStateFlow<AccountProvider> = MutableStateFlow(configuredAccountProvider)
 
