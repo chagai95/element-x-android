@@ -184,9 +184,15 @@ else
   git tag -a "$TAG" -m "Matrix Chat ${VERSION}"
   echo "  tagged ${TAG}"
 fi
-# Keep the local bare mirror in step (never pushes anywhere public on its own).
+# Keep the local bare mirror in step (never pushes anywhere public on its own). A mirror that
+# cannot be written must not take the release down with it, hence the explicit || true: the APK is
+# already built, verified and published by this point.
 if [ -d "${BUILD_ROOT}/element-x-android.git" ]; then
-  git push -q --tags "${BUILD_ROOT}/element-x-android.git" chagai/main && echo "  mirrored to the local bare repo"
+  if git push -q --tags "${BUILD_ROOT}/element-x-android.git" chagai/main 2>/dev/null; then
+    echo "  mirrored to the local bare repo"
+  else
+    echo "  WARNING: could not update the local bare mirror (continuing)" >&2
+  fi
 fi
 
 # --- 8. Tell Chagai -----------------------------------------------------------
