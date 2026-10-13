@@ -47,6 +47,16 @@ private const val versionMonth = 9
  */
 private const val versionReleaseNumber = 4
 
+/**
+ * Chagai fork build number on top of the upstream release above.
+ *
+ * Reset to 1 whenever the fork is rebased onto a newer upstream tag; bumped by
+ * `release.sh` for every build published from the same upstream base. Added to the
+ * upstream version code so the code stays strictly increasing across both kinds of bump,
+ * which is what Android requires for an update to install over the previous build.
+ */
+private const val versionChagai = 1
+
 object Versions {
     /**
      * Base version code that will be set in the Android Manifest.
@@ -54,8 +64,8 @@ object Versions {
      * AAB will have a ABI code of 0.
      * See comment above for the calculation method.
      */
-    const val VERSION_CODE = (2000 + versionYear) * 10_000 + versionMonth * 100 + versionReleaseNumber
-    val VERSION_NAME = "$versionYear.${versionMonth.toString().padStart(2, '0')}.$versionReleaseNumber"
+    const val VERSION_CODE = (2000 + versionYear) * 10_000 + versionMonth * 100 + versionReleaseNumber + versionChagai
+    val VERSION_NAME = "$versionYear.${versionMonth.toString().padStart(2, '0')}.$versionReleaseNumber-chagai.$versionChagai"
 
     /**
      * Compile SDK version. Must be updated when a new Android version is released.
@@ -103,6 +113,7 @@ object Versions {
     init {
         require(versionMonth in 1..12) { "versionMonth must be in [1,12]" }
         require(versionReleaseNumber in 0..99) { "versionReleaseNumber must be in [0,99]" }
+        require(versionChagai in 1..95) { "versionChagai must be in [1,95] (reset it when rebasing onto a newer upstream tag)" }
         require(BUILD_TOOLS_VERSION.startsWith(COMPILE_SDK.toString())) { "When updating COMPILE_SDK, please also update BUILD_TOOLS_VERSION" }
     }
 }
