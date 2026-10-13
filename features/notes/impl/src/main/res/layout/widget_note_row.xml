@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2026 Chagai Friedlander
+  ~
+  ~ SPDX-License-Identifier: AGPL-3.0-only
+  -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_row_text"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:ellipsize="end"
+    android:maxLines="2"
+    android:paddingTop="5dp"
+    android:paddingBottom="5dp"
+    android:textColor="@color/notes_widget_text"
+    android:textSize="14sp" />

@@ -33,5 +33,16 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
+        <!-- Pinned notes on the home screen, and a + for a blank one. -->
+        <receiver
+            android:name=".widget.NotesWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/notes_widget_info" />
+        </receiver>
     </application>
 </manifest>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2026 Chagai Friedlander
+  ~
+  ~ SPDX-License-Identifier: AGPL-3.0-only
+  -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/notes_widget_button" />
+    <corners android:radius="14dp" />
+</shape>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ The dark-mode half of the widget palette. See values/colors.xml.
+  ~
+  ~ SPDX-License-Identifier: AGPL-3.0-only
+  -->
+<resources>
+    <color name="notes_widget_background">#1B1D22</color>
+    <color name="notes_widget_button">#2B2E33</color>
+    <color name="notes_widget_text">#EBEEF2</color>
+    <color name="notes_widget_text_secondary">#A9B2BC</color>
+</resources>

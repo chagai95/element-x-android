@@ -2,6 +2,10 @@
 
 Changes made in this fork, newest first.
 
+## 26.09.4-chagai.6 — 2026-10-13
+
+- Notes are in. Each note is a message in a private 📝 Notes room on your own server, so they sync to every device, survive a reinstall, are encrypted, and you share a notebook by inviting someone to it. A grid of coloured notes you can pin, checklists you tick straight from the card, instant search as you type (try typing 'missed reminders'), a trash you can undo, and a due time that rings with the full loud alarm. Share text from any app straight into a note, and long-press the app icon for New note / Notes / Call reminders. Also: the test alarm now opens the full alarm screen, like a real one does.
+
 ## 26.09.4-chagai.5 — 2026-10-13
 
 - The alarm is properly loud now: it turns the alarm volume up to maximum while it rings (and puts it back after), plays a looped tone of its own instead of a notification ping, buzzes on a long repeating pattern, and fades in over ten seconds so it does not hurt. Five new sounds to pick from — Marimba Rise (the new default), Pulse, Bell Cascade, Old Telephone, Sunrise — plus your phone's own alarm sound, all with a tap-to-hear preview. New switches: full alarm volume, fade-in, vibrate, blink the torch, and a one-tap button to let reminders through Do Not Disturb.

@@ -13,6 +13,7 @@ import android.widget.Toast
 import io.element.android.features.notes.impl.R
 import io.element.android.features.notes.impl.model.Note
 import io.element.android.features.notes.impl.store.NotesStore
+import io.element.android.features.notes.impl.widget.NotesWidgetProvider
 
 /**
  * "Share to notes" — the fastest way a thought gets written down.
@@ -50,6 +51,7 @@ class QuickCaptureActivity : Activity() {
                 body = text,
             )
         )
+        NotesWidgetProvider.requestUpdate(this)
         Toast.makeText(this, R.string.notes_captured, Toast.LENGTH_SHORT).show()
         finish()
     }

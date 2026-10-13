@@ -43,4 +43,7 @@
     <string name="notes_editor_reminder_subtitle">Rings like an alarm, as loud as a call reminder</string>
     <string name="notes_editor_synced">Saved and synced to your server</string>
     <string name="notes_editor_not_synced">Saved on this phone — it will sync when there is a connection</string>
+
+    <string name="notes_widget_description">Your pinned notes, and a button for a new one</string>
+    <string name="notes_widget_empty">No notes yet. Tap + to write one.</string>
 </resources>

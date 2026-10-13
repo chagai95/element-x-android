@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Widget colours. A home-screen widget is drawn by the launcher, not by the app, so it cannot
+  ~ read Compound's theme at runtime — the honest way to follow the system's light/dark setting is
+  ~ a resource qualifier, which the launcher's own configuration resolves.
+  ~
+  ~ SPDX-License-Identifier: AGPL-3.0-only
+  -->
+<resources>
+    <color name="notes_widget_background">#F7F7F5</color>
+    <color name="notes_widget_button">#E3E3E0</color>
+    <color name="notes_widget_text">#17191C</color>
+    <color name="notes_widget_text_secondary">#5F6368</color>
+</resources>

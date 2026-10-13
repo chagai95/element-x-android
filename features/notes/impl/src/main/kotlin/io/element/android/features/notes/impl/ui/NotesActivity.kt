@@ -25,6 +25,7 @@ import io.element.android.features.notes.impl.di.NotesBindings
 import io.element.android.features.notes.impl.model.Note
 import io.element.android.features.notes.impl.reminders.NoteReminders
 import io.element.android.features.notes.impl.store.NotesStore
+import io.element.android.features.notes.impl.widget.NotesWidgetProvider
 import io.element.android.libraries.architecture.bindings
 import io.element.android.libraries.core.meta.BuildMeta
 import io.element.android.libraries.designsystem.theme.ElementThemeApp
@@ -135,6 +136,14 @@ class NotesActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onPause() {
+        // The home-screen widget reads the same store, so it only has to be told to redraw. Done
+        // on pause rather than on every keystroke: nothing on the home screen is visible while
+        // the editor is open, and a broadcast per character would be absurd.
+        NotesWidgetProvider.requestUpdate(this)
+        super.onPause()
     }
 
     private fun createNote(): Note {
