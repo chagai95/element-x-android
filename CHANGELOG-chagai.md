@@ -38,3 +38,69 @@ Changes made in this fork, newest first.
 - First Matrix Chat build, from Element X 26.09.4.
 - Renamed, new [m] icon, installs next to the real Element X.
 - Signs in to chagai.website by default — your server already supports the fast sync Element X needs.
+
+---
+
+## Round 2 performance measurements (2026-10-13)
+
+Measured on the emulator clone (x86_64, Android 13), same device, same protocol, back to back.
+`adb shell am start -W` cold start of `MainActivity`, force-stopped between runs, first run after
+each install discarded. **TotalTime, milliseconds.**
+
+### What was already right, upstream
+
+- **R8 is already on** for `release` (`optimization { enable = true }` — AGP 9's replacement for
+  `isMinifyEnabled`), with the fork's keep rules under `app/proguard/`.
+- **Resources are already shrunk** (`shrunk_resources_binary_format/` exists for every release
+  build).
+- **`androidx.profileinstaller` is already a dependency** via Compose, and AGP already merges
+  every library's ART profile.
+
+Nothing to turn on. The gap was the app's own baseline profile.
+
+### The baseline profile
+
+Before: `assets/dexopt/baseline.prof` was **9,686 bytes**, entirely AndroidX/Compose rules, and
+
+```
+adb shell dumpsys package dexopt | grep -A2 website.chagai.matrixchat
+  x86_64: [status=verify] [reason=install]
+```
+
+`status=verify` means **none of the app's own code is AOT-compiled** after an install — the whole
+startup path is interpreted and JIT-compiled while the user waits. Adding
+`app/src/main/baseline-prof.txt` takes the profile to **12,864 bytes** and covers the application
+object, `MainActivity`, the startup initializers, the DI graph, appnav, onboarding/login/roomlist,
+Compound, the Matrix layer and both fork features.
+
+### The numbers, and the honest reading of them
+
+| Build | State | Runs (ms) | Mean |
+|---|---|---|---|
+| chagai.6 (no app profile) | fresh install, `status=verify` | 389 · 373 · 364 · 393 · 404 | **385** |
+| chagai.6 | after `compile -m speed-profile` | 394 · 396 · 366 · 362 · 384 | **380** |
+| chagai.7 (baseline profile) | fresh install | 367 · 359 · 397 · 402 · 426 | **390** |
+| chagai.6 | fresh install (control pass) | 393 · 409 · 446 · 410 · 396 | **411** |
+| chagai.7 | fresh install (second pass) | 364 · 373 · 393 · 373 · 380 | **377** |
+| chagai.6 | fresh install (second control) | 391 · 388 · 384 · 379 · 368 | **382** |
+
+**chagai.7 mean 383 ms vs chagai.6 mean 396 ms — about 3 %, which is inside the run-to-run
+noise.** On this emulator the baseline profile makes **no measurable difference**, and saying
+otherwise would be inventing a number.
+
+Two things worth recording about *why*, because they are the interesting part:
+
+1. **The first measurements were wrong, and the control caught it.** An early pass showed
+   chagai.6 at 377–568 ms (mean 484), which would have made the profile look like a 20 % win.
+   Re-measuring the same APK back to back gave 364–404 ms. The difference was load on the build
+   server, not the app. On a shared box, a before/after taken minutes apart is not a measurement
+   — only an interleaved A/B is.
+2. **An x86_64 emulator is the wrong device to see this on.** A baseline profile buys the
+   removal of interpretation and JIT on the startup path, and that is cheapest exactly where this
+   was measured: an x86_64 image on a fast host. The benefit is largest on a real ARM phone.
+
+It is still shipped, because the finding that motivated it is real and device-independent:
+`status=verify reason=install` means his phone genuinely is interpreting the app's own code on
+the first launches after every update. The profile costs 3 KB in the APK and nothing at runtime.
+**The honest claim is "the right thing is now in place", not "it is 20 % faster".** Someone with
+a real device and `androidx.benchmark` can measure it properly.
