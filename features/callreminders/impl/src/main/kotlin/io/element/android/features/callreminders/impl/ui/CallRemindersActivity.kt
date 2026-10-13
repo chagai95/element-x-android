@@ -24,6 +24,7 @@ import io.element.android.features.callreminders.impl.notifications.CallReminder
 import io.element.android.features.callreminders.impl.receivers.CallReminderActionReceiver
 import io.element.android.features.callreminders.impl.ring.AlarmRingService
 import io.element.android.features.callreminders.impl.ring.TonePreview
+import io.element.android.features.callreminders.impl.ui.CallReminderAlarmActivity
 import io.element.android.features.callreminders.impl.scheduler.CallReminderScheduler
 import io.element.android.features.callreminders.impl.store.CallReminderSettings
 import io.element.android.features.callreminders.impl.store.CallReminderStore
@@ -121,6 +122,13 @@ class CallRemindersActivity : AppCompatActivity() {
                                 gentle = settingsState.gentleByDefault,
                             )
                         }
+                        // And bring the alarm screen up, which is the half a test was missing:
+                        // on an unlocked phone the system shows the notification as a heads-up
+                        // rather than firing its full-screen intent, so testing the alarm never
+                        // showed the screen a real alarm actually shows. The alarm receiver
+                        // already does this for a real reminder; now the test does the same
+                        // thing through the same path.
+                        startActivity(CallReminderAlarmActivity.intent(this, test.id))
                     },
                 )
             }

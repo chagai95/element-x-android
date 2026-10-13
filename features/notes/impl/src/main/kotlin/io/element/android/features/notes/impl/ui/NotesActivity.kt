@@ -63,6 +63,9 @@ class NotesActivity : AppCompatActivity() {
         // ignoring the shortcut.
         val startNew = intent?.getBooleanExtra(EXTRA_NEW_NOTE, false) == true ||
             intent?.getStringExtra(EXTRA_NEW_NOTE)?.toBooleanStrictOrNull() == true
+        // Resolved here rather than inside the composition: creating a note writes to disk, and
+        // a side effect in a composable initialiser is a trap waiting for the next person.
+        val initialNoteId = openNoteId ?: if (startNew) createNote().id else null
 
         setContent {
             ElementThemeApp(
@@ -73,9 +76,7 @@ class NotesActivity : AppCompatActivity() {
                 buildMeta = buildMeta,
             ) {
                 val notes by store.notes.collectAsState()
-                var editingId by rememberSaveable {
-                    mutableStateOf(openNoteId ?: if (startNew) createNote().id else null)
-                }
+                var editingId by rememberSaveable { mutableStateOf(initialNoteId) }
                 var showingTrash by rememberSaveable { mutableStateOf(false) }
                 val editing = remember(notes, editingId) { notes.firstOrNull { it.id == editingId } }
 

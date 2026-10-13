@@ -55,7 +55,7 @@ private const val versionReleaseNumber = 4
  * upstream version code so the code stays strictly increasing across both kinds of bump,
  * which is what Android requires for an update to install over the previous build.
  */
-private const val versionChagai = 5
+private const val versionChagai = 6
 
 object Versions {
     /**
