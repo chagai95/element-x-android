@@ -18,6 +18,13 @@ private const val COPYRIGHT_URL = BuildConfig.URL_COPYRIGHT
 private const val USE_POLICY_URL = BuildConfig.URL_ACCEPTABLE_USE
 private const val PRIVACY_URL = BuildConfig.URL_PRIVACY
 
+/**
+ * Chagai fork: "Matrix Chat" is a fork of Element X Android, which is AGPL-3.0 licensed.
+ * The licence requires the corresponding source of this build to be offered to its users,
+ * so the About screen links to the fork repository.
+ */
+private const val FORK_SOURCE_URL = "https://github.com/chagai95/element-x-android"
+
 sealed class ElementLegal(
     @StringRes val titleRes: Int,
     val url: String,
@@ -25,6 +32,7 @@ sealed class ElementLegal(
     data object Copyright : ElementLegal(CommonStrings.common_copyright, COPYRIGHT_URL)
     data object AcceptableUsePolicy : ElementLegal(CommonStrings.common_acceptable_use_policy, USE_POLICY_URL)
     data object PrivacyPolicy : ElementLegal(CommonStrings.common_privacy_policy, PRIVACY_URL)
+    data object ForkSourceCode : ElementLegal(CommonStrings.common_fork_source_code, FORK_SOURCE_URL)
 }
 
 fun getAllLegals(): ImmutableList<ElementLegal> {
@@ -32,5 +40,6 @@ fun getAllLegals(): ImmutableList<ElementLegal> {
         ElementLegal.Copyright,
         ElementLegal.AcceptableUsePolicy,
         ElementLegal.PrivacyPolicy,
+        ElementLegal.ForkSourceCode,
     )
 }

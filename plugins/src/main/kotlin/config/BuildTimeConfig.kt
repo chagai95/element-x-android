@@ -9,16 +9,18 @@
 package config
 
 object BuildTimeConfig {
-    const val APPLICATION_ID = "io.element.android.x"
-    const val APPLICATION_NAME = "Element X"
-    val METADATA_HOST_REVERSED: String? = null
+    // Chagai fork: branded as "Matrix Chat" with its own application id so it installs
+    // side by side with the upstream Element X build.
+    const val APPLICATION_ID = "website.chagai.matrixchat"
+    const val APPLICATION_NAME = "Matrix Chat"
+    val METADATA_HOST_REVERSED: String? = "website.chagai.matrixchat"
     val OAUTH_CLIENT_URL_PATH: String? = "apps/android"
-    val URL_WEBSITE: String? = null
-    val URL_LOGO: String? = null
-    val URL_COPYRIGHT: String? = null
-    val URL_ACCEPTABLE_USE: String? = null
-    val URL_PRIVACY: String? = null
-    val URL_POLICY: String? = null
+    val URL_WEBSITE: String? = "https://chagai.website/matrix-chat/"
+    val URL_LOGO: String? = "https://chagai.website/matrix-chat/icon.png"
+    val URL_COPYRIGHT: String? = "https://chagai.website/matrix-chat/#licence"
+    val URL_ACCEPTABLE_USE: String? = "https://chagai.website/matrix-chat/#terms"
+    val URL_PRIVACY: String? = "https://chagai.website/matrix-chat/#privacy"
+    val URL_POLICY: String? = "https://chagai.website/matrix-chat/#privacy"
     val SERVICES_MAPTILER_BASE_URL: String? = null
     val SERVICES_MAPTILER_APIKEY: String? = null
     val SERVICES_MAPTILER_LIGHT_MAPID: String? = null

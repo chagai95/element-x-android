@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Strings added by the "Matrix Chat" fork (chagai95/element-x-android).
+  ~ Kept in a separate file so upstream translation imports never touch them.
+  ~
+  ~ SPDX-License-Identifier: AGPL-3.0-only
+  -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <!-- About screen: AGPL-3.0 source-availability notice for this fork. -->
+    <string name="common_fork_source_code">Source code (this fork, AGPL-3.0)</string>
+</resources>
