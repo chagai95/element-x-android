@@ -23,6 +23,7 @@ import io.element.android.features.callreminders.impl.di.CallRemindersBindings
 import io.element.android.features.callreminders.impl.model.CallReminder
 import io.element.android.features.callreminders.impl.notifications.CallReminderNotifications
 import io.element.android.features.callreminders.impl.receivers.CallReminderActionReceiver
+import io.element.android.features.callreminders.impl.ring.AlarmRingService
 import io.element.android.features.callreminders.impl.scheduler.CallReminderScheduler
 import io.element.android.features.callreminders.impl.store.CallReminderSettings
 import io.element.android.features.callreminders.impl.store.CallReminderStore
@@ -147,7 +148,15 @@ class CallReminderAlarmActivity : AppCompatActivity() {
         sendBroadcast(CallReminderActionReceiver.intent(this, id, action, phone, minutes))
     }
 
+    /**
+     * Stop the noise, keep the alarm.
+     *
+     * The service does both halves: it releases the tone, the vibration and the borrowed alarm
+     * volume, then re-posts the same notification silently so the buttons are still there. The
+     * reminder stays open — silencing is not dealing with it.
+     */
     private fun silence(reminder: CallReminder) {
+        AlarmRingService.silence(this)
         CallReminderNotifications.showAlarm(
             context = this,
             reminder = reminder,
@@ -165,6 +174,7 @@ class CallReminderAlarmActivity : AppCompatActivity() {
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
+        AlarmRingService.stop(this)
         CallReminderNotifications.cancelAlarm(this, reminder)
         val snoozed = store.update(reminder.id) {
             it.copy(state = CallReminder.State.Snoozed, dueAtMillis = target, escalationCount = 0, acknowledged = false)

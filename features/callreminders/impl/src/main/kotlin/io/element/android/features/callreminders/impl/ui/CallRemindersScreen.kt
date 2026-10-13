@@ -31,6 +31,7 @@ import io.element.android.compound.theme.ElementTheme
 import io.element.android.features.callreminders.impl.R
 import io.element.android.features.callreminders.impl.model.CallReminder
 import io.element.android.features.callreminders.impl.notifications.CallReminderNotifications
+import io.element.android.features.callreminders.impl.ring.AlarmTone
 import io.element.android.libraries.designsystem.components.button.BackButton
 import io.element.android.libraries.designsystem.components.list.ListItemContent
 import io.element.android.libraries.designsystem.preview.ElementPreview
@@ -62,6 +63,8 @@ fun CallRemindersScreen(
     onDelete: (CallReminder) -> Unit,
     onSettingChange: (CallRemindersSettingsState) -> Unit,
     onTestRing: () -> Unit,
+    onPreviewTone: (AlarmTone) -> Unit,
+    onOpenDoNotDisturbSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showSettings by rememberSaveable { mutableStateOf(false) }
@@ -97,7 +100,8 @@ fun CallRemindersScreen(
                 .padding(padding),
         ) {
             if (showSettings) {
-                item { SettingsSection(settings, onSettingChange, onTestRing) }
+                item { SoundSection(settings, onSettingChange, onTestRing, onPreviewTone, onOpenDoNotDisturbSettings) }
+                item { SettingsSection(settings, onSettingChange) }
                 item { HorizontalDivider() }
             }
             if (reminders.isEmpty()) {
@@ -195,20 +199,119 @@ private fun ReminderRow(
     }
 }
 
+/**
+ * Everything about how loud it is and what it sounds like.
+ *
+ * Put first and kept together because this is the part that was wrong: the alarm was ringing at
+ * whatever the phone's alarm volume happened to be. "Use full alarm volume" and the tone picker
+ * are the two controls that matter, so they are the two at the top.
+ */
 @Composable
-private fun SettingsSection(
+private fun SoundSection(
     settings: CallRemindersSettingsState,
     onChange: (CallRemindersSettingsState) -> Unit,
     onTestRing: () -> Unit,
+    onPreviewTone: (AlarmTone) -> Unit,
+    onOpenDoNotDisturbSettings: () -> Unit,
 ) {
+    var expandedTones by rememberSaveable { mutableStateOf(false) }
+    val selected = AlarmTone.fromId(settings.toneId)
     Column {
-        ListSectionHeader(title = stringResource(R.string.call_reminders_settings_title), hasDivider = false)
+        ListSectionHeader(title = stringResource(R.string.call_reminders_sound_title), hasDivider = false)
+        ListItem(
+            supportingContent = { Text(stringResource(selected.labelRes)) },
+            trailingContent = ListItemContent.Text(
+                stringResource(if (expandedTones) R.string.call_reminders_action_hide_settings else R.string.call_reminders_action_change)
+            ),
+            onClick = { expandedTones = !expandedTones },
+            content = { Text(stringResource(R.string.call_reminders_setting_tone)) },
+        )
+        if (expandedTones) {
+            AlarmTone.entries.forEach { tone ->
+                ListItem(
+                    supportingContent = { Text(stringResource(tone.descriptionRes)) },
+                    trailingContent = ListItemContent.RadioButton(selected = tone == selected),
+                    onClick = {
+                        onChange(settings.copy(toneId = tone.id))
+                        onPreviewTone(tone)
+                    },
+                    content = { Text(stringResource(tone.labelRes)) },
+                )
+            }
+        }
+        SwitchRow(
+            title = stringResource(R.string.call_reminders_setting_max_volume),
+            subtitle = stringResource(R.string.call_reminders_setting_max_volume_subtitle),
+            checked = settings.maxOutVolume,
+            onChange = { onChange(settings.copy(maxOutVolume = it)) },
+        )
+        ListItem(
+            supportingContent = {
+                Text(
+                    if (settings.rampUpSeconds == 0) {
+                        stringResource(R.string.call_reminders_setting_ramp_off)
+                    } else {
+                        stringResource(R.string.call_reminders_setting_ramp_value, settings.rampStartPercent, settings.rampUpSeconds)
+                    }
+                )
+            },
+            trailingContent = ListItemContent.Text(stringResource(R.string.call_reminders_action_change)),
+            onClick = { onChange(settings.copy(rampUpSeconds = settings.nextRampSeconds())) },
+            content = { Text(stringResource(R.string.call_reminders_setting_ramp)) },
+        )
+        SwitchRow(
+            title = stringResource(R.string.call_reminders_setting_vibrate),
+            subtitle = stringResource(R.string.call_reminders_setting_vibrate_subtitle),
+            checked = settings.vibrate,
+            onChange = { onChange(settings.copy(vibrate = it)) },
+        )
+        SwitchRow(
+            title = stringResource(R.string.call_reminders_setting_torch),
+            subtitle = stringResource(R.string.call_reminders_setting_torch_subtitle),
+            checked = settings.torchBlink,
+            onChange = { onChange(settings.copy(torchBlink = it)) },
+        )
         SwitchRow(
             title = stringResource(R.string.call_reminders_setting_silent_mode),
             subtitle = stringResource(R.string.call_reminders_setting_silent_mode_subtitle),
             checked = settings.ringInSilentMode,
             onChange = { onChange(settings.copy(ringInSilentMode = it)) },
         )
+        ListItem(
+            supportingContent = {
+                Text(
+                    stringResource(
+                        if (settings.hasDoNotDisturbAccess) {
+                            R.string.call_reminders_setting_dnd_granted
+                        } else {
+                            R.string.call_reminders_setting_dnd_missing
+                        }
+                    )
+                )
+            },
+            trailingContent = ListItemContent.Text(
+                stringResource(
+                    if (settings.hasDoNotDisturbAccess) R.string.call_reminders_action_review else R.string.call_reminders_action_allow
+                )
+            ),
+            onClick = onOpenDoNotDisturbSettings,
+            content = { Text(stringResource(R.string.call_reminders_setting_dnd)) },
+        )
+        ListItem(
+            supportingContent = { Text(stringResource(R.string.call_reminders_setting_test_ring_subtitle)) },
+            onClick = onTestRing,
+            content = { Text(stringResource(R.string.call_reminders_setting_test_ring)) },
+        )
+    }
+}
+
+@Composable
+private fun SettingsSection(
+    settings: CallRemindersSettingsState,
+    onChange: (CallRemindersSettingsState) -> Unit,
+) {
+    Column {
+        ListSectionHeader(title = stringResource(R.string.call_reminders_settings_title), hasDivider = false)
         SwitchRow(
             title = stringResource(R.string.call_reminders_setting_escalation),
             subtitle = stringResource(R.string.call_reminders_setting_escalation_subtitle),
@@ -239,11 +342,6 @@ private fun SettingsSection(
             onClick = { onChange(settings.copy(snoozeOptionsMinutes = settings.nextSnoozePreset())) },
             content = { Text(stringResource(R.string.call_reminders_setting_default_snooze)) },
         )
-        ListItem(
-            supportingContent = { Text(stringResource(R.string.call_reminders_setting_test_ring_subtitle)) },
-            onClick = onTestRing,
-            content = { Text(stringResource(R.string.call_reminders_setting_test_ring)) },
-        )
     }
 }
 
@@ -272,11 +370,25 @@ data class CallRemindersSettingsState(
     val sendAcknowledgements: Boolean = true,
     val showNextReminderNotification: Boolean = true,
     val snoozeOptionsMinutes: List<Int> = listOf(5, 15, 60),
+    val toneId: String = AlarmTone.DEFAULT.id,
+    val maxOutVolume: Boolean = true,
+    val rampUpSeconds: Int = 10,
+    val rampStartPercent: Int = 40,
+    val vibrate: Boolean = true,
+    val torchBlink: Boolean = false,
+    /** Read from the system, not stored: whether the Do Not Disturb grant is in place. */
+    val hasDoNotDisturbAccess: Boolean = false,
 ) {
     /** Cycles through the handful of snooze sets worth having, so changing it needs no dialog. */
     fun nextSnoozePreset(): List<Int> {
         val index = SNOOZE_PRESETS.indexOfFirst { it == snoozeOptionsMinutes }
         return SNOOZE_PRESETS[(index + 1).mod(SNOOZE_PRESETS.size)]
+    }
+
+    /** Same trick for the fade-in: four sensible values, cycled by tapping the row. */
+    fun nextRampSeconds(): Int {
+        val index = RAMP_PRESETS.indexOfFirst { it == rampUpSeconds }
+        return RAMP_PRESETS[(index + 1).mod(RAMP_PRESETS.size)]
     }
 
     companion object {
@@ -286,6 +398,9 @@ data class CallRemindersSettingsState(
             listOf(1, 5, 15),
             listOf(15, 60, 240),
         )
+
+        /** 0 = straight to full volume. */
+        val RAMP_PRESETS = listOf(10, 0, 5, 20, 30)
     }
 }
 
@@ -308,5 +423,7 @@ internal fun CallRemindersScreenPreview(
         onDelete = {},
         onSettingChange = {},
         onTestRing = {},
+        onPreviewTone = {},
+        onOpenDoNotDisturbSettings = {},
     )
 }

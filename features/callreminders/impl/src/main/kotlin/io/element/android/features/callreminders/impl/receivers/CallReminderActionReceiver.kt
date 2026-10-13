@@ -13,6 +13,7 @@ import android.content.Intent
 import android.net.Uri
 import io.element.android.features.callreminders.impl.model.CallReminder
 import io.element.android.features.callreminders.impl.notifications.CallReminderNotifications
+import io.element.android.features.callreminders.impl.ring.AlarmRingService
 import io.element.android.features.callreminders.impl.scheduler.CallReminderScheduler
 import io.element.android.features.callreminders.impl.store.CallReminderStore
 import timber.log.Timber
@@ -97,6 +98,9 @@ class CallReminderActionReceiver : BroadcastReceiver() {
         scheduler: CallReminderScheduler,
         reminder: CallReminder,
     ) {
+        // First the noise, then the picture: stopping the service releases the tone, the
+        // vibration, the torch and the borrowed alarm volume.
+        AlarmRingService.stop(context)
         CallReminderNotifications.cancelAlarm(context, reminder)
         scheduler.cancel(reminder.id)
         CallReminderNotifications.showNext(context, store.open().firstOrNull { it.id != reminder.id })

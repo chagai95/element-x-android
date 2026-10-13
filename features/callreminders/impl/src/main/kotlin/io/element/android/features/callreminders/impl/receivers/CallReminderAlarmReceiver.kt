@@ -11,6 +11,7 @@ import android.content.Context
 import android.content.Intent
 import io.element.android.features.callreminders.impl.model.CallReminder
 import io.element.android.features.callreminders.impl.notifications.CallReminderNotifications
+import io.element.android.features.callreminders.impl.ring.AlarmRingService
 import io.element.android.features.callreminders.impl.scheduler.CallReminderScheduler
 import io.element.android.features.callreminders.impl.store.CallReminderSettings
 import io.element.android.features.callreminders.impl.store.CallReminderStore
@@ -20,11 +21,11 @@ import timber.log.Timber
 /**
  * The moment the alarm goes off.
  *
- * Deliberately short: post the ringing notification (which carries the full-screen intent, so the
- * alarm screen comes up even over a lock screen), try to bring the screen up directly as well,
- * and arm the "stop ringing and come back later" alarm. No service, nothing long-running — a
- * broadcast receiver has milliseconds, and everything that needs to last is a notification or an
- * alarm, both of which outlive the process.
+ * Deliberately short: hand the ringing to [AlarmRingService] (which posts the notification with
+ * its full-screen intent, takes the alarm volume to maximum and plays the looped tone), try to
+ * bring the screen up directly as well, and arm the "stop ringing and come back later" alarm.
+ * A broadcast receiver has milliseconds to live, so everything that has to last is either a
+ * foreground service, a notification or an alarm — all three outlive this process.
  */
 class CallReminderAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -52,7 +53,12 @@ class CallReminderAlarmReceiver : BroadcastReceiver() {
         if (!reminder.isOpen) return
         val ringing = store.update(reminder.id) { it.copy(state = CallReminder.State.Ringing) } ?: return
         val gentle = ringing.gentle || settings.gentleByDefault
-        CallReminderNotifications.showAlarm(context, ringing, gentle = gentle)
+        // The service owns the sound: looped tone, alarm stream at maximum, ramp, vibration.
+        // If the system refuses to start it, fall back to the notification channel's own sound —
+        // quieter, but a reminder that does not ring at all is the one unacceptable outcome.
+        if (!AlarmRingService.ring(context, ringing, gentle)) {
+            CallReminderNotifications.showAlarm(context, ringing, gentle = gentle)
+        }
 
         // Belt and braces: the full-screen intent is the reliable path on a locked screen, this
         // is the one that works when the phone is unlocked and in use.
@@ -79,6 +85,7 @@ class CallReminderAlarmReceiver : BroadcastReceiver() {
         reminder: CallReminder,
     ) {
         if (reminder.state != CallReminder.State.Ringing) return
+        AlarmRingService.stop(context)
         CallReminderNotifications.cancelAlarm(context, reminder)
 
         val scheduler = CallReminderScheduler(context)

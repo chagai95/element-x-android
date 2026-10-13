@@ -6,7 +6,9 @@
 
 package io.element.android.features.callreminders.impl.ui
 
+import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.collectAsState
@@ -20,6 +22,8 @@ import io.element.android.features.callreminders.impl.di.CallRemindersBindings
 import io.element.android.features.callreminders.impl.model.CallReminder
 import io.element.android.features.callreminders.impl.notifications.CallReminderNotifications
 import io.element.android.features.callreminders.impl.receivers.CallReminderActionReceiver
+import io.element.android.features.callreminders.impl.ring.AlarmRingService
+import io.element.android.features.callreminders.impl.ring.TonePreview
 import io.element.android.features.callreminders.impl.scheduler.CallReminderScheduler
 import io.element.android.features.callreminders.impl.store.CallReminderSettings
 import io.element.android.features.callreminders.impl.store.CallReminderStore
@@ -28,6 +32,7 @@ import io.element.android.libraries.core.meta.BuildMeta
 import io.element.android.libraries.designsystem.theme.ElementThemeApp
 import io.element.android.libraries.featureflag.api.FeatureFlagService
 import io.element.android.libraries.preferences.api.store.AppPreferencesStore
+import timber.log.Timber
 
 /**
  * The reminders list: what is coming, what is snoozed, what was done, plus the settings.
@@ -41,6 +46,9 @@ class CallRemindersActivity : AppCompatActivity() {
     @Inject lateinit var featureFlagService: FeatureFlagService
 
     @Inject lateinit var buildMeta: BuildMeta
+
+    /** Set once the screen is composed, so onResume can push a freshly granted permission in. */
+    private var dndRefresh: ((Boolean) -> Unit)? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,7 +72,12 @@ class CallRemindersActivity : AppCompatActivity() {
                 buildMeta = buildMeta,
             ) {
                 val reminders by store.reminders.collectAsState()
-                var settingsState by remember { mutableStateOf(settings.toState()) }
+                // The Do Not Disturb flag is read from the system, not stored, so it is folded in
+                // here and refreshed in onResume — the user may have just granted it.
+                var settingsState by remember {
+                    mutableStateOf(settings.toState(CallReminderNotifications.hasDoNotDisturbAccess(this@CallRemindersActivity)))
+                }
+                dndRefresh = { settingsState = settingsState.copy(hasDoNotDisturbAccess = it) }
 
                 CallRemindersScreen(
                     reminders = reminders,
@@ -79,9 +92,14 @@ class CallRemindersActivity : AppCompatActivity() {
                         store.remove(reminder.id)
                         CallReminderNotifications.showNext(this, store.open().firstOrNull())
                     },
+                    onPreviewTone = { tone -> TonePreview.play(this, tone) },
+                    onOpenDoNotDisturbSettings = ::openDoNotDisturbSettings,
                     onSettingChange = { changed ->
                         settings.apply(changed)
                         settingsState = changed
+                        // Channels remember their Do Not Disturb bypass from creation time, so a
+                        // freshly granted permission has to be pushed into them.
+                        CallReminderNotifications.ensureChannels(this)
                         CallReminderNotifications.showNext(
                             this,
                             store.open().firstOrNull().takeIf { changed.showNextReminderNotification },
@@ -95,15 +113,45 @@ class CallRemindersActivity : AppCompatActivity() {
                         val test = testReminder(settingsState)
                         store.remove(test.id)
                         store.upsert(test)
-                        CallReminderNotifications.showAlarm(
-                            context = this,
-                            reminder = test,
-                            gentle = settingsState.gentleByDefault,
-                        )
+                        TonePreview.stop()
+                        if (!AlarmRingService.ring(this, test, settingsState.gentleByDefault)) {
+                            CallReminderNotifications.showAlarm(
+                                context = this,
+                                reminder = test,
+                                gentle = settingsState.gentleByDefault,
+                            )
+                        }
                     },
                 )
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        dndRefresh?.invoke(CallReminderNotifications.hasDoNotDisturbAccess(this))
+    }
+
+    override fun onPause() {
+        // A tone preview must not follow the user out of the screen.
+        TonePreview.stop()
+        super.onPause()
+    }
+
+    /**
+     * Opens the system's Do Not Disturb access screen.
+     *
+     * Android will not let an app grant itself the right to ignore Do Not Disturb; only the user
+     * can, on this screen. Without it the alarm stream still cuts through a silenced ringer,
+     * which is the common case — this is for a full Do Not Disturb.
+     */
+    private fun openDoNotDisturbSettings() {
+        runCatching {
+            startActivity(
+                Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }.onFailure { Timber.w(it, "No Do Not Disturb access screen on this device") }
     }
 
     private fun act(reminder: CallReminder, action: String, phone: String? = null, minutes: Int? = null) {
@@ -125,13 +173,20 @@ class CallRemindersActivity : AppCompatActivity() {
 
 }
 
-private fun CallReminderSettings.toState() = CallRemindersSettingsState(
+private fun CallReminderSettings.toState(hasDoNotDisturbAccess: Boolean) = CallRemindersSettingsState(
     ringInSilentMode = ringInSilentMode,
     escalationEnabled = escalationEnabled,
     gentleByDefault = gentleByDefault,
     sendAcknowledgements = sendAcknowledgements,
     showNextReminderNotification = showNextReminderNotification,
     snoozeOptionsMinutes = snoozeOptionsMinutes,
+    toneId = toneId,
+    maxOutVolume = maxOutVolume,
+    rampUpSeconds = rampUpSeconds,
+    rampStartPercent = rampStartPercent,
+    vibrate = vibrate,
+    torchBlink = torchBlink,
+    hasDoNotDisturbAccess = hasDoNotDisturbAccess,
 )
 
 private fun CallReminderSettings.apply(state: CallRemindersSettingsState) {
@@ -141,4 +196,10 @@ private fun CallReminderSettings.apply(state: CallRemindersSettingsState) {
     sendAcknowledgements = state.sendAcknowledgements
     showNextReminderNotification = state.showNextReminderNotification
     snoozeOptionsMinutes = state.snoozeOptionsMinutes
+    toneId = state.toneId
+    maxOutVolume = state.maxOutVolume
+    rampUpSeconds = state.rampUpSeconds
+    rampStartPercent = state.rampStartPercent
+    vibrate = state.vibrate
+    torchBlink = state.torchBlink
 }

@@ -24,6 +24,8 @@
     <string name="call_reminders_action_hide_settings">Done</string>
     <string name="call_reminders_action_delete">Delete</string>
     <string name="call_reminders_action_change">Change</string>
+    <string name="call_reminders_action_allow">Allow</string>
+    <string name="call_reminders_action_review">Review</string>
 
     <string name="call_reminders_section_upcoming">Coming up</string>
     <string name="call_reminders_section_snoozed">Snoozed</string>
@@ -31,9 +33,37 @@
     <string name="call_reminders_empty_title">No call reminders yet</string>
     <string name="call_reminders_empty_subtitle">Ask for one in your chat — “remind me to call Elisheva at 15:00” — and it will ring here like an alarm.</string>
 
+    <string name="call_reminders_sound_title">How loud it rings</string>
+    <string name="call_reminders_setting_tone">Alarm sound</string>
+    <string name="call_reminders_setting_max_volume">Use full alarm volume</string>
+    <string name="call_reminders_setting_max_volume_subtitle">Turns the alarm volume up to maximum while it rings, then puts it back exactly as it was</string>
+    <string name="call_reminders_setting_ramp">Fade in</string>
+    <string name="call_reminders_setting_ramp_value">Starts at %1$d%% and reaches full in %2$d seconds</string>
+    <string name="call_reminders_setting_ramp_off">Straight to full volume</string>
+    <string name="call_reminders_setting_vibrate">Vibrate</string>
+    <string name="call_reminders_setting_vibrate_subtitle">A long, repeating buzz alongside the sound</string>
+    <string name="call_reminders_setting_torch">Blink the torch</string>
+    <string name="call_reminders_setting_torch_subtitle">For a phone face down or across the room</string>
+    <string name="call_reminders_setting_dnd">Ring through Do Not Disturb</string>
+    <string name="call_reminders_setting_dnd_granted">Allowed — a reminder gets through even on Do Not Disturb</string>
+    <string name="call_reminders_setting_dnd_missing">Not allowed yet. The alarm volume already beats silent mode; this is for full Do Not Disturb.</string>
+
+    <string name="call_reminders_tone_marimba_rise">Marimba Rise</string>
+    <string name="call_reminders_tone_marimba_rise_subtitle">A climbing marimba — bright, hard to ignore, pleasant to wake to</string>
+    <string name="call_reminders_tone_synth_pulse">Pulse</string>
+    <string name="call_reminders_tone_synth_pulse_subtitle">Urgent and modern. The one that will not be slept through.</string>
+    <string name="call_reminders_tone_bell_cascade">Bell Cascade</string>
+    <string name="call_reminders_tone_bell_cascade_subtitle">Bells falling down a scale. Carries a long way.</string>
+    <string name="call_reminders_tone_retro_ring">Old Telephone</string>
+    <string name="call_reminders_tone_retro_ring_subtitle">Twin brass bells, ring-ring … pause</string>
+    <string name="call_reminders_tone_sunrise">Sunrise</string>
+    <string name="call_reminders_tone_sunrise_subtitle">Starts soft and gets busier. For waking up gently.</string>
+    <string name="call_reminders_tone_system">Phone\'s own alarm sound</string>
+    <string name="call_reminders_tone_system_subtitle">Whatever you already wake up to</string>
+
     <string name="call_reminders_settings_title">How the alarm behaves</string>
     <string name="call_reminders_setting_silent_mode">Ring even in silent mode</string>
-    <string name="call_reminders_setting_silent_mode_subtitle">Use the alarm sound channel, like a clock alarm does</string>
+    <string name="call_reminders_setting_silent_mode_subtitle">Rings on the alarm stream, like a clock alarm, so a silenced phone still rings</string>
     <string name="call_reminders_setting_escalation">Ring again if ignored</string>
     <string name="call_reminders_setting_escalation_subtitle">Stop after a few minutes, then try again up to three times</string>
     <string name="call_reminders_setting_gentle">Gentle by default</string>
@@ -44,13 +74,15 @@
     <string name="call_reminders_setting_next_notification_subtitle">A quiet line in the notification shade</string>
     <string name="call_reminders_setting_default_snooze">Snooze options</string>
     <string name="call_reminders_setting_test_ring">Test the alarm</string>
-    <string name="call_reminders_setting_test_ring_subtitle">Ring right now, exactly as a real reminder would</string>
+    <string name="call_reminders_setting_test_ring_subtitle">Ring right now, at full volume, exactly as a real reminder would</string>
 
     <string name="call_reminders_test_title">Test alarm</string>
     <string name="call_reminders_test_notes">This is what a call reminder looks and sounds like.</string>
 
     <string name="call_reminders_next_title">Next call reminder</string>
 
+    <string name="call_reminders_channel_ring">Ringing reminder</string>
+    <string name="call_reminders_channel_ring_description">The alarm while it is ringing. Silent on purpose — the app plays the tone itself, loudly.</string>
     <string name="call_reminders_channel_loud">Call reminders</string>
     <string name="call_reminders_channel_loud_description">Rings like an alarm when it is time to call someone</string>
     <string name="call_reminders_channel_gentle">Call reminders (gentle)</string>
