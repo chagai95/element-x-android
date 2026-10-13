@@ -112,3 +112,7 @@ lint/tmp/
 .DS_Store
 
 checkouts/**
+
+# Chagai fork: local build environment, never committed
+/local.properties
+/env.sh

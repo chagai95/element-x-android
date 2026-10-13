@@ -87,6 +87,20 @@ android {
             storeFile = file("./signature/debug.keystore")
             storePassword = "android"
         }
+        // Chagai fork: personal release keystore, passed in via -P properties by release.sh so
+        // the keystore and its password never enter the repository.
+        register("chagai") {
+            val storeFilePath = project.findProperty("chagai.storeFile") as? String
+            if (storeFilePath != null) {
+                storeFile = file(storeFilePath)
+                storePassword = project.findProperty("chagai.storePassword") as? String
+                keyAlias = project.findProperty("chagai.keyAlias") as? String
+                keyPassword = project.findProperty("chagai.keyPassword") as? String
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
         register("nightly") {
             keyAlias = System.getenv("ELEMENT_ANDROID_NIGHTLY_KEYID")
                 ?: project.property("signing.element.nightly.keyId") as? String?
@@ -122,7 +136,13 @@ android {
                 "login_redirect_scheme",
                 oAuthRedirectSchemeBase,
             )
-            signingConfig = signingConfigs.getByName("debug")
+            // Chagai fork: sign release builds with the personal keystore when release.sh supplies it,
+            // otherwise keep upstream's behaviour (debug key) so a plain `assembleRelease` still works.
+            signingConfig = if (project.hasProperty("chagai.storeFile")) {
+                signingConfigs.getByName("chagai")
+            } else {
+                signingConfigs.getByName("debug")
+            }
 
             optimization {
                 enable = true
