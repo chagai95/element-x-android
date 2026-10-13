@@ -33,4 +33,34 @@
             android:targetClass="io.element.android.features.callreminders.impl.ui.CallRemindersActivity"
             android:targetPackage="website.chagai.matrixchat" />
     </shortcut>
+    <!--
+      Chagai fork: Supernote tried exactly these shortcuts and, per its last commit, never got
+      them working; here they do, and each one goes somewhere different.
+    -->
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher_monochrome"
+        android:shortcutId="new_note"
+        android:shortcutLongLabel="@string/notes_action_new"
+        android:shortcutShortLabel="@string/notes_action_new">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="io.element.android.features.notes.impl.ui.NotesActivity"
+            android:targetPackage="website.chagai.matrixchat">
+            <extra
+                android:name="new_note"
+                android:value="true" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher_monochrome"
+        android:shortcutId="notes"
+        android:shortcutLongLabel="@string/notes_title"
+        android:shortcutShortLabel="@string/notes_title">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="io.element.android.features.notes.impl.ui.NotesActivity"
+            android:targetPackage="website.chagai.matrixchat" />
+    </shortcut>
 </shortcuts>

@@ -16,6 +16,7 @@ import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
 import io.element.android.libraries.androidutils.hash.hash
 import io.element.android.features.callreminders.api.CallReminderSessionObserver
+import io.element.android.features.notes.api.NotesSessionObserver
 import io.element.android.libraries.matrix.api.MatrixClient
 import io.element.android.libraries.matrix.api.MatrixClientProvider
 import io.element.android.libraries.matrix.api.auth.MatrixAuthenticationService
@@ -43,6 +44,9 @@ class MatrixSessionCache(
     // Chagai fork: call reminders need to see messages as they sync, so the observer starts and
     // stops with the session exactly like the sync orchestrator does.
     private val callReminderSessionObserverFactory: CallReminderSessionObserver.Factory,
+    // Chagai fork: notes live in a Matrix room, so they sync for the same reason messages do.
+    // The observer resolves that room, reads it into the local store and drains the outbox.
+    private val notesSessionObserverFactory: NotesSessionObserver.Factory,
 ) : MatrixClientProvider {
     private val sessionIdsToMatrixSession = ConcurrentHashMap<SessionId, InMemoryMatrixSession>()
     private val restoreMutex = Mutex()
@@ -128,6 +132,10 @@ class MatrixSessionCache(
         )
         syncOrchestrator.start()
         callReminderSessionObserverFactory.create(
+            matrixClient = matrixClient,
+            sessionCoroutineScope = matrixClient.sessionCoroutineScope,
+        ).start()
+        notesSessionObserverFactory.create(
             matrixClient = matrixClient,
             sessionCoroutineScope = matrixClient.sessionCoroutineScope,
         ).start()

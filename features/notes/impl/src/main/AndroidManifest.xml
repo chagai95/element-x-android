@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2026 Chagai Friedlander
+  ~
+  ~ SPDX-License-Identifier: AGPL-3.0-only
+  -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- The notes wall and the editor. Exported so a launcher shortcut and a note's alarm
+             can open it; it carries nothing an attacker could use, only a note id. -->
+        <activity
+            android:name=".ui.NotesActivity"
+            android:configChanges="screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode"
+            android:exported="true"
+            android:label="@string/notes_title"
+            android:launchMode="singleTask"
+            android:taskAffinity="io.element.android.features.notes"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- Share text from any app and it becomes a note. Invisible: it saves and closes. -->
+        <activity
+            android:name=".ui.QuickCaptureActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:label="@string/notes_capture_label"
+            android:noHistory="true"
+            android:taskAffinity="io.element.android.features.notes"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

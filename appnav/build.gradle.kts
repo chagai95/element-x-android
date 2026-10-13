@@ -51,6 +51,7 @@ dependencies {
 
     implementation(projects.features.announcement.api)
     implementation(projects.features.callreminders.api)
+    implementation(projects.features.notes.api)
     implementation(projects.features.ftue.api)
     implementation(projects.features.linknewdevice.api)
     implementation(projects.features.share.api)
