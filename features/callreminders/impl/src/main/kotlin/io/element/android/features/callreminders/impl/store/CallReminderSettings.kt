@@ -65,6 +65,50 @@ class CallReminderSettings private constructor(private val prefs: SharedPreferen
         get() = prefs.getBoolean(KEY_NEXT_NOTIFICATION, true)
         set(value) = prefs.edit { putBoolean(KEY_NEXT_NOTIFICATION, value) }
 
+    /**
+     * Which tone rings. One of [io.element.android.features.callreminders.impl.ring.AlarmTone]'s
+     * ids; an unknown value falls back to the default rather than ringing nothing.
+     */
+    var toneId: String
+        get() = prefs.getString(KEY_TONE, null) ?: DEFAULT_TONE_ID
+        set(value) = prefs.edit { putString(KEY_TONE, value) }
+
+    /**
+     * Take the alarm stream to maximum while a reminder rings, then put it back.
+     *
+     * On by default, and the single reason the alarm is actually loud: a notification channel can
+     * only ever be as loud as the stream already is, and a phone that is not used as an alarm
+     * clock usually has its alarm volume well below maximum.
+     */
+    var maxOutVolume: Boolean
+        get() = prefs.getBoolean(KEY_MAX_VOLUME, true)
+        set(value) = prefs.edit { putBoolean(KEY_MAX_VOLUME, value) }
+
+    /**
+     * Seconds the tone takes to reach full volume, starting from [rampStartPercent].
+     *
+     * Zero means "straight to full". The default of 10 s is loud enough immediately to wake you
+     * and quiet enough in the first second not to hurt if the phone is next to your ear.
+     */
+    var rampUpSeconds: Int
+        get() = prefs.getInt(KEY_RAMP_SECONDS, DEFAULT_RAMP_SECONDS)
+        set(value) = prefs.edit { putInt(KEY_RAMP_SECONDS, value.coerceIn(0, 60)) }
+
+    /** Where the ramp starts, as a percentage of full volume. */
+    var rampStartPercent: Int
+        get() = prefs.getInt(KEY_RAMP_START, DEFAULT_RAMP_START_PERCENT)
+        set(value) = prefs.edit { putInt(KEY_RAMP_START, value.coerceIn(5, 100)) }
+
+    /** Buzz as well as ring. */
+    var vibrate: Boolean
+        get() = prefs.getBoolean(KEY_VIBRATE, true)
+        set(value) = prefs.edit { putBoolean(KEY_VIBRATE, value) }
+
+    /** Blink the camera torch while it rings — for a phone face down or across the room. */
+    var torchBlink: Boolean
+        get() = prefs.getBoolean(KEY_TORCH, false)
+        set(value) = prefs.edit { putBoolean(KEY_TORCH, value) }
+
     companion object {
         private const val PREFS_NAME = "call_reminders"
         private const val KEY_SNOOZE = "snooze_options"
@@ -75,10 +119,24 @@ class CallReminderSettings private constructor(private val prefs: SharedPreferen
         private const val KEY_GENTLE = "gentle_by_default"
         private const val KEY_ACK = "send_acknowledgements"
         private const val KEY_NEXT_NOTIFICATION = "show_next_reminder"
+        private const val KEY_TONE = "tone_id"
+        private const val KEY_MAX_VOLUME = "max_out_volume"
+        private const val KEY_RAMP_SECONDS = "ramp_up_seconds"
+        private const val KEY_RAMP_START = "ramp_start_percent"
+        private const val KEY_VIBRATE = "vibrate"
+        private const val KEY_TORCH = "torch_blink"
 
         val DEFAULT_SNOOZE = listOf(5, 15, 60)
         const val DEFAULT_AUTO_SILENCE_MINUTES = 3
         const val DEFAULT_MAX_ESCALATIONS = 3
+
+        /**
+         * Kept as a literal rather than referencing `AlarmTone.DEFAULT.id` so the settings store
+         * has no dependency on the ring package; `AlarmTone.fromId` is tolerant either way.
+         */
+        const val DEFAULT_TONE_ID = "marimba_rise"
+        const val DEFAULT_RAMP_SECONDS = 10
+        const val DEFAULT_RAMP_START_PERCENT = 40
 
         fun get(context: Context): CallReminderSettings =
             CallReminderSettings(

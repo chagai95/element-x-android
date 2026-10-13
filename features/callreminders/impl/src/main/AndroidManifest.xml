@@ -17,6 +17,15 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- The ring is a foreground service so the tone keeps playing with the screen off and
+         survives the broadcast receiver that started it. Type mediaPlayback: it plays audio. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- Raising STREAM_ALARM to maximum for the duration of the ring, then putting it back. -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- Lets the reminder channel ignore Do Not Disturb, once the user grants the access in
+         system settings; without the grant the alarm stream still beats silent mode. -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- "Call now" uses ACTION_DIAL, which opens the dialer with the number filled in and needs
@@ -46,6 +55,13 @@
             android:label="@string/call_reminders_title"
             android:launchMode="singleTask"
             android:taskAffinity="io.element.android.features.callreminders" />
+
+        <!-- Owns the sound: looped tone on the alarm stream at full volume, ramp, vibration,
+             optional torch. Not exported: only this app ever starts it. -->
+        <service
+            android:name=".ring.AlarmRingService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
 
         <receiver
             android:name=".receivers.CallReminderAlarmReceiver"

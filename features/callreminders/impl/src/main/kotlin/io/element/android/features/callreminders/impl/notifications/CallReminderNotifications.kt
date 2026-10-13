@@ -30,21 +30,41 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * The alarm itself.
+ * The alarm's face: the thing on screen and in the shade, with the buttons and the full-screen
+ * intent that brings the alarm up over the lock screen.
  *
- * The ringing is done by the *notification*, not by a service: a notification on a channel whose
- * sound is the alarm ringtone with [AudioAttributes.USAGE_ALARM], marked insistent so the sound
- * loops until it is dealt with, and carrying a full-screen intent so the alarm screen comes up
- * over the lock screen. That gives alarm-clock behaviour — loops, cuts through a silenced ringer,
- * wakes the screen — with nothing to keep alive and nothing to leak if the process dies.
+ * ### Who makes the noise
  *
- * Two channels exist so "loud" and "gentle" are real, system-level choices the user can also
- * retune in Android's own settings.
+ * Since the "make it ring loud" pass, the *sound* belongs to
+ * [io.element.android.features.callreminders.impl.ring.AlarmRingService], not to a notification
+ * channel. A channel's sound can only ever be as loud as the stream currently is, cannot ramp,
+ * and cannot be stopped without taking the notification down with it. The service plays the tone
+ * itself, takes the alarm stream to maximum and puts it back afterwards.
+ *
+ * So there are two kinds of alarm notification here:
+ *
+ * * **[CHANNEL_RING]** — deliberately **silent and vibration-free**, high importance, Do Not
+ *   Disturb bypassing. This is the one the ring service posts as its foreground notification:
+ *   the service is already making the noise, and a channel sound on top of it would be two
+ *   tones at once.
+ * * **[CHANNEL_LOUD] / [CHANNEL_GENTLE]** — the original channels, which *do* carry a sound and
+ *   `FLAG_INSISTENT`. These are now the **fallback**, used only when the ring service cannot be
+ *   started. Quieter, but the alarm still rings; it is never silent.
+ *
+ * [CHANNEL_UPCOMING] is the unrelated quiet "next reminder" line.
  */
 object CallReminderNotifications {
     const val CHANNEL_LOUD = "call_reminders_loud"
     const val CHANNEL_GENTLE = "call_reminders_gentle"
     const val CHANNEL_UPCOMING = "call_reminders_upcoming"
+
+    /**
+     * The channel the ring service posts on. Silent by design — see the class comment.
+     *
+     * A channel's importance and sound are fixed at creation and cannot be changed by the app
+     * afterwards, which is why this is a new id rather than a reconfigured [CHANNEL_LOUD].
+     */
+    const val CHANNEL_RING = "call_reminders_ring"
 
     private const val ALARM_NOTIFICATION_ID_BASE = 920_000
     const val UPCOMING_NOTIFICATION_ID = 919_999
@@ -63,6 +83,19 @@ object CallReminderNotifications {
         val alarmTone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
+        val ring = NotificationChannel(
+            CHANNEL_RING,
+            context.getString(R.string.call_reminders_channel_ring),
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply {
+            description = context.getString(R.string.call_reminders_channel_ring_description)
+            // Silent *on purpose*: the ring service is playing the tone.
+            setSound(null, null)
+            enableVibration(false)
+            setShowBadge(false)
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            bypassDndIfAllowed(context)
+        }
         val loud = NotificationChannel(
             CHANNEL_LOUD,
             context.getString(R.string.call_reminders_channel_loud),
@@ -73,9 +106,7 @@ object CallReminderNotifications {
             enableVibration(true)
             vibrationPattern = LOUD_VIBRATION
             lockscreenVisibility = Notification.VISIBILITY_PUBLIC
-            // Best effort: only takes effect once the user grants Do Not Disturb access. Without
-            // it the alarm stream still cuts through a silenced ringer, which is the common case.
-            runCatching { setBypassDnd(true) }.onFailure { Timber.d("No Do Not Disturb access") }
+            bypassDndIfAllowed(context)
         }
         val gentle = NotificationChannel(
             CHANNEL_GENTLE,
@@ -103,21 +134,48 @@ object CallReminderNotifications {
             setSound(null, null)
             enableVibration(false)
         }
-        manager.createNotificationChannels(listOf(loud, gentle, upcoming))
+        manager.createNotificationChannels(listOf(ring, loud, gentle, upcoming))
+    }
+
+    /**
+     * Ask to ignore Do Not Disturb.
+     *
+     * This only sticks once the user has granted notification-policy access in system settings
+     * (the reminders screen offers the button for it). Without the grant the alarm *stream* still
+     * cuts through a silenced ringer, which covers the common case; the grant is what gets it
+     * through a full Do Not Disturb.
+     */
+    private fun NotificationChannel.bypassDndIfAllowed(context: Context) {
+        val manager = context.getSystemService<NotificationManager>()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && manager?.isNotificationPolicyAccessGranted != true) return
+        runCatching { setBypassDnd(true) }.onFailure { Timber.d("No Do Not Disturb access") }
+    }
+
+    /** True when the app may set a channel to bypass Do Not Disturb — i.e. the grant is in place. */
+    fun hasDoNotDisturbAccess(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
+        return context.getSystemService<NotificationManager>()?.isNotificationPolicyAccessGranted == true
     }
 
     fun notificationId(reminder: CallReminder): Int = ALARM_NOTIFICATION_ID_BASE + (reminder.id.hashCode() and 0xFFFF)
 
     /**
-     * Posts the ringing alarm.
+     * Builds the alarm notification.
      *
-     * @param silent re-post without sound, used when the user hits a volume key: the screen and
-     * the buttons stay, the noise stops. That is what a clock alarm does too.
+     * Shared by the ring service (which adopts it as its foreground notification, `silent = true`
+     * because it is playing the tone itself) and by the fallback path (`silent = false`, where the
+     * channel's own sound plus `FLAG_INSISTENT` is what rings).
      */
-    fun showAlarm(context: Context, reminder: CallReminder, gentle: Boolean, silent: Boolean = false) {
+    fun buildAlarmNotification(
+        context: Context,
+        reminder: CallReminder,
+        gentle: Boolean,
+        silent: Boolean,
+        ongoing: Boolean = true,
+    ): Notification {
         ensureChannels(context)
         val channel = when {
-            silent -> CHANNEL_UPCOMING
+            silent -> CHANNEL_RING
             gentle -> CHANNEL_GENTLE
             else -> CHANNEL_LOUD
         }
@@ -135,7 +193,7 @@ object CallReminderNotifications {
             .setContentTitle(reminder.title)
             .setContentText(subtitle)
             .setStyle(NotificationCompat.BigTextStyle().bigText(subtitle))
-            .setOngoing(true)
+            .setOngoing(ongoing)
             .setAutoCancel(false)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setWhen(reminder.originalDueAtMillis)
@@ -143,7 +201,9 @@ object CallReminderNotifications {
             .setContentIntent(fullScreen)
             // The full-screen intent is what brings the alarm screen up over the lock screen.
             .setFullScreenIntent(fullScreen, true)
-            .setOnlyAlertOnce(false)
+            // Re-posting a silenced alarm must not pop the heads-up again; a ringing one should
+            // re-alert on every update.
+            .setOnlyAlertOnce(silent)
 
         if (silent) {
             builder.setSilent(true)
@@ -185,11 +245,21 @@ object CallReminderNotifications {
         val notification = builder.build()
         if (!silent) {
             // FLAG_INSISTENT loops the sound until the notification is cancelled. There is no
-            // NotificationCompat setter for it, so it goes on the built notification. This is
-            // what makes the thing ring rather than ping once and be missed.
+            // NotificationCompat setter for it, so it goes on the built notification. Only
+            // relevant on the fallback path, where the channel is the thing making the noise.
             notification.flags = notification.flags or Notification.FLAG_INSISTENT
         }
+        return notification
+    }
 
+    /**
+     * Posts the alarm notification directly.
+     *
+     * Used on the fallback path (the ring service could not start) and to re-post a *silenced*
+     * alarm so the screen and the buttons survive the noise stopping.
+     */
+    fun showAlarm(context: Context, reminder: CallReminder, gentle: Boolean, silent: Boolean = false) {
+        val notification = buildAlarmNotification(context, reminder, gentle = gentle, silent = silent)
         runCatching {
             NotificationManagerCompat.from(context).notify(notificationId(reminder), notification)
         }.onFailure { Timber.e(it, "Could not post the alarm notification (notifications permission?)") }
