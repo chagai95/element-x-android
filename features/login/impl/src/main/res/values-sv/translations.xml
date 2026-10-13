@@ -44,7 +44,6 @@
   <string name="screen_onboarding_sign_up">"Skapa konto"</string>
   <string name="screen_onboarding_welcome_message">"Välkommen till den snabbaste %1$s någonsin. Superladdad för snabbhet och enkelhet."</string>
   <string name="screen_onboarding_welcome_subtitle">"Välkommen till %1$s. Superladdad, för snabbhet och enkelhet."</string>
-  <string name="screen_onboarding_welcome_title">"Var i ditt rätta element"</string>
   <string name="screen_qr_code_login_connecting_subtitle">"Upprättar en säker anslutning"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_description">"En säker anslutning kunde inte göras till den nya enheten. Dina befintliga enheter är fortfarande säkra och du behöver inte oroa dig för dem."</string>
   <string name="screen_qr_code_login_connection_note_secure_state_list_header">"Nu då?"</string>

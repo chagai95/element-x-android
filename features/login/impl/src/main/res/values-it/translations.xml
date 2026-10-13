@@ -61,7 +61,6 @@
   <string name="screen_onboarding_welcome_back">"Bentornato"</string>
   <string name="screen_onboarding_welcome_message">"Benvenuti nell\'%1$s più veloce di sempre. Potenziato per velocità e semplicità."</string>
   <string name="screen_onboarding_welcome_subtitle">"Benvenuto su %1$s. Potenziato in velocità e semplicità."</string>
-  <string name="screen_onboarding_welcome_title">"Sii nel tuo elemento"</string>
   <string name="screen_qr_code_login_connecting_subtitle">"Stabilendo la connessione"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_description">"Non è stato possibile stabilire una connessione sicura con il nuovo dispositivo. I tuoi dispositivi esistenti sono ancora al sicuro e non devi preoccuparti di loro."</string>
   <string name="screen_qr_code_login_connection_note_secure_state_list_header">"E adesso?"</string>

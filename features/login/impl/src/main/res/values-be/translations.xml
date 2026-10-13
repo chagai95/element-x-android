@@ -36,7 +36,6 @@
   <string name="screen_onboarding_sign_up">"Стварыць уліковы запіс"</string>
   <string name="screen_onboarding_welcome_message">"Сардэчна запрашаем у самы хуткі %1$s. Перавага ў хуткасці і прастаце."</string>
   <string name="screen_onboarding_welcome_subtitle">"Сардэчна запрашаем у %1$s. Зараджаны, для хуткасці і прастаты."</string>
-  <string name="screen_onboarding_welcome_title">"Будзьце ў сваім element"</string>
   <string name="screen_qr_code_login_connecting_subtitle">"Ўсталяванне бяспечнага злучэння"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_description">"Не атрымалася ўсталяваць бяспечнае злучэнне з новай прыладай. Існуючыя прылады па-ранейшаму ў бяспецы, і вам не трэба турбавацца пра іх."</string>
   <string name="screen_qr_code_login_connection_note_secure_state_list_header">"Што зараз?"</string>

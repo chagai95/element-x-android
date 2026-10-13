@@ -60,7 +60,6 @@
   <string name="screen_onboarding_welcome_back">"おかえりなさい"</string>
   <string name="screen_onboarding_welcome_message">"最速の %1$s にようこそ。機能性と利便性を極限まで追求しました。"</string>
   <string name="screen_onboarding_welcome_subtitle">"機敏と利便を追求した %1$s へようこそ。"</string>
-  <string name="screen_onboarding_welcome_title">"Be in your element"</string>
   <string name="screen_qr_code_login_connecting_subtitle">"安全な通信を確立しています"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_description">"新しい端末で安全な通信を確立できませんでした。既存の端末は安全な状態を維持しています。"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_list_header">"どうしますか？"</string>

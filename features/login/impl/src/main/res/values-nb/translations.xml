@@ -52,7 +52,6 @@
   <string name="screen_onboarding_welcome_back">"Velkommen tilbake"</string>
   <string name="screen_onboarding_welcome_message">"Velkommen til den raskeste %1$s noensinne. Superladet for hastighet og enkelhet."</string>
   <string name="screen_onboarding_welcome_subtitle">"Velkommen til %1$s. Supercharged, for hastighet og enkelhet."</string>
-  <string name="screen_onboarding_welcome_title">"Vær i ditt rette element"</string>
   <string name="screen_qr_code_login_connecting_subtitle">"Etablere en sikker forbindelse"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_description">"En sikker tilkobling kunne ikke opprettes til den nye enheten. Dine eksisterende enheter er fortsatt trygge, og du trenger ikke å bekymre deg for dem."</string>
   <string name="screen_qr_code_login_connection_note_secure_state_list_header">"Hva nå?"</string>

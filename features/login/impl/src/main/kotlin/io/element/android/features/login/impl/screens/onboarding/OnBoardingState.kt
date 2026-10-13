@@ -19,6 +19,12 @@ data class OnBoardingState(
     val showDeveloperSettings: Boolean,
     val productionApplicationName: String,
     val defaultAccountProvider: AccountProvider?,
+    /**
+     * Chagai fork: the account provider to offer as a one-tap shortcut when nothing forces a
+     * choice. Unlike [defaultAccountProvider] it is only a suggestion — "Sign in manually" is
+     * still shown next to it, so any other homeserver is one tap away.
+     */
+    val suggestedAccountProvider: AccountProvider?,
     val mustChooseAccountProvider: Boolean,
     val canLoginWithQrCode: Boolean,
     val canCreateAccount: Boolean,

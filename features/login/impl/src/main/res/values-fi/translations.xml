@@ -61,7 +61,6 @@
   <string name="screen_onboarding_welcome_back">"Tervetuloa takaisin"</string>
   <string name="screen_onboarding_welcome_message">"Tervetuloa kaikkien aikojen nopeimpaan %1$s -sovellukseen. Ahdettu nopeudella ja yksinkertaisuudella."</string>
   <string name="screen_onboarding_welcome_subtitle">"Tervetuloa %1$s -sovellukseen. Ahdettu nopeudella ja yksinkertaisuudella."</string>
-  <string name="screen_onboarding_welcome_title">"Ole elementissäsi"</string>
   <string name="screen_qr_code_login_connecting_subtitle">"Muodostetaan turvallista yhteyttä"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_description">"Turvallista yhteyttä uuteen laitteeseen ei voitu muodostaa. Olemassa olevat laitteesi ovat edelleen turvassa, eikä sinun tarvitse huolehtia niistä."</string>
   <string name="screen_qr_code_login_connection_note_secure_state_list_header">"Mitä nyt?"</string>

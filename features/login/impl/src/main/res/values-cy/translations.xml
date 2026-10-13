@@ -44,7 +44,6 @@
   <string name="screen_onboarding_sign_up">"Creu cyfrif"</string>
   <string name="screen_onboarding_welcome_message">"Croeso i\'r %1$s cyflymaf erioed. Yn nodedig am gyflymder a symlrwydd."</string>
   <string name="screen_onboarding_welcome_subtitle">"Croeso i %1$s. Yn nodedig ar gyfer cyflymder a symlrwydd."</string>
-  <string name="screen_onboarding_welcome_title">"Byddwch yn eich elfen"</string>
   <string name="screen_qr_code_login_connecting_subtitle">"Yn creu cysylltiad diogel"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_description">"Nid oedd modd gwneud cysylltiad diogel â\'r ddyfais newydd. Mae eich dyfeisiau presennol yn dal yn ddiogel a does dim angen i chi boeni amdanyn nhw."</string>
   <string name="screen_qr_code_login_connection_note_secure_state_list_header">"Beth nawr?"</string>

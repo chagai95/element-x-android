@@ -61,7 +61,6 @@
   <string name="screen_onboarding_welcome_back">"مرحبًا بعودتك"</string>
   <string name="screen_onboarding_welcome_message">"مرحباً بك في أسرع %1$s على الإطلاق. مزوَّد من أجل سرعةٍ وبساطة."</string>
   <string name="screen_onboarding_welcome_subtitle">"مرحباً بك في %1$s. المعزَّز، من أجل سرعةٍ وبساطة."</string>
-  <string name="screen_onboarding_welcome_title">"Be in your element"</string>
   <string name="screen_qr_code_login_connecting_subtitle">"جارٍ إنشاء اتصال آمن"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_description">"تعذّر إنشاء اتصال آمن بالجهاز الجديد. لا تزال أجهزتك الحالية آمنة ولا داعي للقلق بشأنها."</string>
   <string name="screen_qr_code_login_connection_note_secure_state_list_header">"ماذا الآن؟"</string>

@@ -292,15 +292,39 @@ private fun OnBoardingButtons(
         }
         val defaultAccountProvider = state.defaultAccountProvider
         if (defaultAccountProvider == null) {
-            Button(
-                text = stringResource(id = signInButtonStringRes),
-                onClick = {
-                    onSignIn(state.mustChooseAccountProvider)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag(TestTags.onBoardingSignIn)
-            )
+            // Chagai fork: offer the fork's homeserver as the primary one-tap action, and keep
+            // the manual path right underneath so any other homeserver stays one tap away.
+            val suggested = state.suggestedAccountProvider
+            if (suggested != null) {
+                Button(
+                    text = stringResource(id = R.string.screen_onboarding_sign_in_to, suggested.friendlyServerName()),
+                    showProgress = isLoading,
+                    onClick = {
+                        state.eventSink(OnBoardingEvent.OnSignIn(suggested))
+                    },
+                    enabled = !isLoading,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                TextButton(
+                    text = stringResource(id = R.string.screen_onboarding_sign_in_manually),
+                    onClick = {
+                        onSignIn(state.mustChooseAccountProvider)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(TestTags.onBoardingSignIn)
+                )
+            } else {
+                Button(
+                    text = stringResource(id = signInButtonStringRes),
+                    onClick = {
+                        onSignIn(state.mustChooseAccountProvider)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(TestTags.onBoardingSignIn)
+                )
+            }
         } else {
             Button(
                 text = stringResource(id = R.string.screen_onboarding_sign_in_to, defaultAccountProvider.friendlyServerName()),

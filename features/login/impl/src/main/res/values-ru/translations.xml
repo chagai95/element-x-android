@@ -61,7 +61,6 @@
   <string name="screen_onboarding_welcome_back">"С возвращением"</string>
   <string name="screen_onboarding_welcome_message">"Добро пожаловать в быстрый и простой %1$s."</string>
   <string name="screen_onboarding_welcome_subtitle">"Добро пожаловать в быстрый и простой %1$s."</string>
-  <string name="screen_onboarding_welcome_title">"Элементарно."</string>
   <string name="screen_qr_code_login_connecting_subtitle">"Установление безопасного соединения"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_description">"Не удалось установить безопасное соединение с новым устройством. Не беспокойтесь, существующие устройства в безопасности."</string>
   <string name="screen_qr_code_login_connection_note_secure_state_list_header">"Что теперь?"</string>

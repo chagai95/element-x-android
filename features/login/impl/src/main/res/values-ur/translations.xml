@@ -35,7 +35,6 @@
   <string name="screen_onboarding_sign_up">"کھاتہ تخلیق کریں"</string>
   <string name="screen_onboarding_welcome_message">"اب تک کی تیز ترین %1$s میں خوش آمدید۔ رفتار اور سادگی کے لئے مشحون"</string>
   <string name="screen_onboarding_welcome_subtitle">"%1$s پر خوش آمدید۔ شحن فائق شدہ، رفتار اور سادگی کیلئے۔"</string>
-  <string name="screen_onboarding_welcome_title">"اپنے عنصر میں رہیں"</string>
   <string name="screen_qr_code_login_connecting_subtitle">"محفوظ اتصال قائم کر رہا ہے"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_description">"نئے آلے سے محفوظ اتصال نہیں بنایا جا سکا۔ آپ کے موجودہ آلات اب بھی محفوظ ہیں اور آپ کو ان کے بارے میں فکر کرنے کی ضرورت نہیں ہے۔"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_list_header">"اب کیا؟"</string>

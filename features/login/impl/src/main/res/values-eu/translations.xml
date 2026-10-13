@@ -33,7 +33,6 @@
   <string name="screen_onboarding_sign_up">"Sortu kontua"</string>
   <string name="screen_onboarding_welcome_message">"Ongi etorri inoizko %1$s azkarrenera. Abiaduraz eta sinpletasunaz gainkargatua."</string>
   <string name="screen_onboarding_welcome_subtitle">"Ongi etorri %1$s-ra. Abiaduraz eta sinpletasunez gainezka."</string>
-  <string name="screen_onboarding_welcome_title">"Egon zure saltsan"</string>
   <string name="screen_qr_code_login_connecting_subtitle">"Konexio segurua ezartzen"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_description">"Ezin izan da konexio segururik ezarri gailu berriarekin. Lehendik dauden gailuak seguru daude oraindik ere eta ez duzu haietaz kezkatu beharrik."</string>
   <string name="screen_qr_code_login_connection_note_secure_state_list_header">"Orain zer?"</string>

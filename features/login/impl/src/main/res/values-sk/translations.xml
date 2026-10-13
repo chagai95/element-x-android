@@ -44,7 +44,6 @@
   <string name="screen_onboarding_sign_up">"Vytvoriť účet"</string>
   <string name="screen_onboarding_welcome_message">"Vitajte v najrýchlejšom %1$s vôbec. Nadupaný pre rýchlosť a jednoduchosť."</string>
   <string name="screen_onboarding_welcome_subtitle">"Vitajte v %1$s. Nadupaný, pre rýchlosť a jednoduchosť."</string>
-  <string name="screen_onboarding_welcome_title">"Buďte vo svojom elemente"</string>
   <string name="screen_qr_code_login_connecting_subtitle">"Nadväzovanie bezpečného spojenia"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_description">"K novému zariadeniu sa nepodarilo vytvoriť bezpečné pripojenie. Vaše existujúce zariadenia sú stále v bezpečí a nemusíte sa o ne obávať."</string>
   <string name="screen_qr_code_login_connection_note_secure_state_list_header">"Čo teraz?"</string>

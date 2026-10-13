@@ -42,7 +42,6 @@
   <string name="screen_onboarding_sign_up">"Tạo tài khoản"</string>
   <string name="screen_onboarding_welcome_message">"Chào mừng đến với %1$s nhanh nhất từ trước đến nay. Tối ưu cho tốc độ và sự đơn giản."</string>
   <string name="screen_onboarding_welcome_subtitle">"Chào mừng đến với %1$s. Tối ưu hóa cho tốc độ và sự đơn giản."</string>
-  <string name="screen_onboarding_welcome_title">"Hãy ở trong thế mạnh (element) của mình"</string>
   <string name="screen_qr_code_login_invalid_scan_state_retry_button">"Thử lại"</string>
   <string name="screen_qr_code_login_start_over_button">"Bắt đầu lại"</string>
   <string name="screen_server_confirmation_change_server">"Thay đổi nhà cung cấp tài khoản"</string>

@@ -61,7 +61,6 @@
   <string name="screen_onboarding_welcome_back">"欢迎回来"</string>
   <string name="screen_onboarding_welcome_message">"欢迎使用迄今最快的 %1$s，速度与简洁的极致。"</string>
   <string name="screen_onboarding_welcome_subtitle">"欢迎使用 %1$s，速度与简洁的极致。"</string>
-  <string name="screen_onboarding_welcome_title">"融入 Element"</string>
   <string name="screen_qr_code_login_connecting_subtitle">"建立安全连接"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_description">"无法与新设备建立安全连接。你的现有设备仍然安全，无需担心。"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_list_header">"现在怎么办？"</string>

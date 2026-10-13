@@ -61,7 +61,6 @@
   <string name="screen_onboarding_welcome_back">"Üdvözöljük újra!"</string>
   <string name="screen_onboarding_welcome_message">"Üdvözöljük a valaha volt leggyorsabb %1$sben. Felturbózva, a sebesség és az egyszerűség érdekében."</string>
   <string name="screen_onboarding_welcome_subtitle">"Üdvözli az %1$s. Felturbózva, a sebesség és az egyszerűség jegyében."</string>
-  <string name="screen_onboarding_welcome_title">"Legyen elemében"</string>
   <string name="screen_qr_code_login_connecting_subtitle">"Biztonságos kapcsolat létesítése"</string>
   <string name="screen_qr_code_login_connection_note_secure_state_description">"Nem sikerült biztonságos kapcsolatot létesíteni az új eszközzel. A meglévő eszközei továbbra is biztonságban vannak, és nem kell aggódnia miattuk."</string>
   <string name="screen_qr_code_login_connection_note_secure_state_list_header">"Most mi lesz?"</string>
