@@ -37,6 +37,7 @@ import io.element.android.features.callreminders.impl.notifications.CallReminder
 import io.element.android.libraries.designsystem.preview.ElementPreview
 import io.element.android.libraries.designsystem.preview.PreviewsDayNight
 import io.element.android.libraries.designsystem.theme.components.Button
+import io.element.android.libraries.designsystem.theme.components.ButtonSize
 import io.element.android.libraries.designsystem.theme.components.Icon
 import io.element.android.libraries.designsystem.theme.components.OutlinedButton
 import io.element.android.libraries.designsystem.theme.components.Text
@@ -218,6 +219,9 @@ private fun SnoozeRow(
             OutlinedButton(
                 text = snoozeLabel(minutes),
                 onClick = { onSnooze(minutes) },
+                // Low padding and an equal share of the row, so "1 hour" is not truncated to "…".
+                size = ButtonSize.MediumLowPadding,
+                modifier = Modifier.weight(1f),
             )
         }
     }
