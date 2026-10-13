@@ -15,4 +15,22 @@
         <data android:mimeType="*/*" />
         <category android:name="io.element.android.category.SHARE_TARGET" />
     </share-target>
+    <!--
+      Chagai fork: long-pressing the launcher icon offers the call reminders list, which is the
+      only screen of that feature that is not reached from an alarm or a notification.
+      targetPackage has to be a literal here (resource XML has no manifest placeholders), so this
+      shortcut only resolves in the release build, whose id has no suffix. That is the only build
+      that ships.
+    -->
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher_monochrome"
+        android:shortcutId="call_reminders"
+        android:shortcutLongLabel="@string/call_reminders_title"
+        android:shortcutShortLabel="@string/call_reminders_title">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="io.element.android.features.callreminders.impl.ui.CallRemindersActivity"
+            android:targetPackage="website.chagai.matrixchat" />
+    </shortcut>
 </shortcuts>

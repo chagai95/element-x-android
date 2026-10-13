@@ -15,6 +15,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
 import io.element.android.libraries.androidutils.hash.hash
+import io.element.android.features.callreminders.api.CallReminderSessionObserver
 import io.element.android.libraries.matrix.api.MatrixClient
 import io.element.android.libraries.matrix.api.MatrixClientProvider
 import io.element.android.libraries.matrix.api.auth.MatrixAuthenticationService
@@ -39,6 +40,9 @@ class MatrixSessionCache(
     private val authenticationService: MatrixAuthenticationService,
     private val syncOrchestratorFactory: SyncOrchestrator.Factory,
     private val analyticsService: AnalyticsService,
+    // Chagai fork: call reminders need to see messages as they sync, so the observer starts and
+    // stops with the session exactly like the sync orchestrator does.
+    private val callReminderSessionObserverFactory: CallReminderSessionObserver.Factory,
 ) : MatrixClientProvider {
     private val sessionIdsToMatrixSession = ConcurrentHashMap<SessionId, InMemoryMatrixSession>()
     private val restoreMutex = Mutex()
@@ -123,6 +127,10 @@ class MatrixSessionCache(
             syncOrchestrator = syncOrchestrator,
         )
         syncOrchestrator.start()
+        callReminderSessionObserverFactory.create(
+            matrixClient = matrixClient,
+            sessionCoroutineScope = matrixClient.sessionCoroutineScope,
+        ).start()
     }
 }
 

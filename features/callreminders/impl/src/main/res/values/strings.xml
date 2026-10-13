@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Strings for the Matrix Chat call-reminder alarm. Fork-only, so they live in the fork's own
+  ~ file and are never touched by an upstream translation import.
+  ~
+  ~ SPDX-License-Identifier: AGPL-3.0-only
+  -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="call_reminders_title">Call reminders</string>
+
+    <string name="call_reminders_alarm_heading">Time to call</string>
+    <string name="call_reminders_due_at">Due %1$s</string>
+    <string name="call_reminders_snooze_heading">Not now — remind me again in</string>
+    <string name="call_reminders_after_call_prompt">Back already? Mark it done, or push it back.</string>
+    <string name="call_reminders_volume_hint">A volume key silences the ring and keeps this screen.</string>
+
+    <string name="call_reminders_action_call_now">Call now</string>
+    <string name="call_reminders_action_done">Done</string>
+    <string name="call_reminders_action_snooze_minutes">Snooze %1$d min</string>
+    <string name="call_reminders_action_snooze_tomorrow">Tomorrow at 9:00</string>
+    <string name="call_reminders_action_open_chat">Open chat</string>
+    <string name="call_reminders_action_silence">Silence</string>
+    <string name="call_reminders_action_settings">Settings</string>
+    <string name="call_reminders_action_hide_settings">Done</string>
+    <string name="call_reminders_action_delete">Delete</string>
+    <string name="call_reminders_action_change">Change</string>
+
+    <string name="call_reminders_section_upcoming">Coming up</string>
+    <string name="call_reminders_section_snoozed">Snoozed</string>
+    <string name="call_reminders_section_done">Done</string>
+    <string name="call_reminders_empty_title">No call reminders yet</string>
+    <string name="call_reminders_empty_subtitle">Ask for one in your chat — “remind me to call Elisheva at 15:00” — and it will ring here like an alarm.</string>
+
+    <string name="call_reminders_settings_title">How the alarm behaves</string>
+    <string name="call_reminders_setting_silent_mode">Ring even in silent mode</string>
+    <string name="call_reminders_setting_silent_mode_subtitle">Use the alarm sound channel, like a clock alarm does</string>
+    <string name="call_reminders_setting_escalation">Ring again if ignored</string>
+    <string name="call_reminders_setting_escalation_subtitle">Stop after a few minutes, then try again up to three times</string>
+    <string name="call_reminders_setting_gentle">Gentle by default</string>
+    <string name="call_reminders_setting_gentle_subtitle">A soft tone and a short buzz instead of the full alarm</string>
+    <string name="call_reminders_setting_ack">Tell the chat what happened</string>
+    <string name="call_reminders_setting_ack_subtitle">Posts “done” or “snoozed” back, so it also shows on WhatsApp</string>
+    <string name="call_reminders_setting_next_notification">Show the next reminder</string>
+    <string name="call_reminders_setting_next_notification_subtitle">A quiet line in the notification shade</string>
+    <string name="call_reminders_setting_default_snooze">Snooze options</string>
+    <string name="call_reminders_setting_test_ring">Test the alarm</string>
+    <string name="call_reminders_setting_test_ring_subtitle">Ring right now, exactly as a real reminder would</string>
+
+    <string name="call_reminders_test_title">Test alarm</string>
+    <string name="call_reminders_test_notes">This is what a call reminder looks and sounds like.</string>
+
+    <string name="call_reminders_next_title">Next call reminder</string>
+
+    <string name="call_reminders_channel_loud">Call reminders</string>
+    <string name="call_reminders_channel_loud_description">Rings like an alarm when it is time to call someone</string>
+    <string name="call_reminders_channel_gentle">Call reminders (gentle)</string>
+    <string name="call_reminders_channel_gentle_description">A softer tone for call reminders set to gentle</string>
+    <string name="call_reminders_channel_upcoming">Upcoming call reminders</string>
+    <string name="call_reminders_channel_upcoming_description">The quiet line showing the next call reminder</string>
+
+    <plurals name="call_reminders_snooze_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
+    <plurals name="call_reminders_snooze_hours">
+        <item quantity="one">%1$d hour</item>
+        <item quantity="other">%1$d hours</item>
+    </plurals>
+</resources>

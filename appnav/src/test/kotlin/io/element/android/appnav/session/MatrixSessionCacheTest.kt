@@ -131,6 +131,7 @@ class MatrixSessionCacheTest {
         authenticationService = authenticationService,
         syncOrchestratorFactory = syncOrchestratorFactory,
         analyticsService = analyticsService,
+        callReminderSessionObserverFactory = FakeCallReminderSessionObserver.Factory(),
     )
 
     private fun TestScope.createSyncOrchestratorFactory(): SyncOrchestrator.Factory {

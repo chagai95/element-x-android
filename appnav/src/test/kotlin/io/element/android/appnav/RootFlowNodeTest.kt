@@ -23,6 +23,7 @@ import com.google.common.truth.Truth.assertThat
 import io.element.android.appnav.intent.IntentResolver
 import io.element.android.appnav.root.RootNavStateFlowFactory
 import io.element.android.appnav.root.RootPresenter
+import io.element.android.appnav.session.FakeCallReminderSessionObserver
 import io.element.android.appnav.session.FakeSyncOrchestratorFactory
 import io.element.android.appnav.session.MatrixSessionCache
 import io.element.android.features.login.api.LoginEntryPoint
@@ -128,6 +129,7 @@ class RootFlowNodeTest : RobolectricTest() {
             authenticationService = FakeMatrixAuthenticationService(),
             syncOrchestratorFactory = FakeSyncOrchestratorFactory(),
             analyticsService = FakeAnalyticsService(),
+            callReminderSessionObserverFactory = FakeCallReminderSessionObserver.Factory(),
         )
         val parentNode = FakeParentNode(
             graph = FakeNodeFactoriesBindings(
