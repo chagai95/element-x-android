@@ -2,6 +2,10 @@
 
 Changes made in this fork, newest first.
 
+## 26.09.4-chagai.5 — 2026-10-13
+
+- The alarm is properly loud now: it turns the alarm volume up to maximum while it rings (and puts it back after), plays a looped tone of its own instead of a notification ping, buzzes on a long repeating pattern, and fades in over ten seconds so it does not hurt. Five new sounds to pick from — Marimba Rise (the new default), Pulse, Bell Cascade, Old Telephone, Sunrise — plus your phone's own alarm sound, all with a tap-to-hear preview. New switches: full alarm volume, fade-in, vibrate, blink the torch, and a one-tap button to let reminders through Do Not Disturb.
+
 ## 26.09.4-chagai.4 — 2026-10-13
 
 - Small fix on top of the version I sent a few minutes ago: the 60-minute snooze button was being squashed to "…" — install this one instead.

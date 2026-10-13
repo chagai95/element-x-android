@@ -113,21 +113,101 @@ New columns: `payload_kind`, `call_phone`, `call_contact`, `call_notes`, `snooze
 | `BootCompletedReceiver` | rebuilds alarms after a reboot, an app update, or a clock/time-zone change. |
 | `DefaultCallReminderSessionObserver` | watches the room list for reminders and posts outcomes back. Started from `MatrixSessionCache` alongside the sync orchestrator. |
 
-### How it rings without a service
+### How it rings — and why that changed
 
-The ringing is done by the **notification**, not by a foreground service: a channel whose sound
-is the alarm ringtone with `AudioAttributes.USAGE_ALARM`, and a notification carrying
-`Notification.FLAG_INSISTENT` so the sound **loops** until it is dealt with, plus a full-screen
-intent so the alarm screen comes up over the lock screen.
+**The first version rang with a notification.** A channel whose sound was the alarm ringtone
+with `AudioAttributes.USAGE_ALARM`, plus `Notification.FLAG_INSISTENT` so the sound looped until
+it was dealt with, plus a full-screen intent. Textbook, and reliable.
 
-That is alarm-clock behaviour with nothing to keep alive: no foreground-service type to argue
-with on Android 14, nothing to leak if the process is killed, and the user can retune the sound
-in Android's own notification settings because it is a real channel. Two channels exist so
-**loud** and **gentle** are genuine system-level choices.
+**It was also too quiet**, and the reason is structural, not a bug: a notification channel plays
+*at whatever `STREAM_ALARM` is currently set to*. On a phone that is not used as an alarm clock
+the alarm volume sits wherever it was last left, usually well below maximum, so a reminder
+arrived as a polite chime. A channel also cannot fade in, cannot use a vibration pattern the user
+picked, and cannot be made to stop making noise without taking the whole notification down.
 
-`USAGE_ALARM` is what gets through a silenced ringer. Do Not Disturb is a separate permission
-(`setBypassDnd` only takes effect once the user grants DND access in system settings); the code
-asks for it and carries on without it.
+So the sound moved into **`AlarmRingService`**, a foreground service of type `mediaPlayback`
+whose only job is to be loud:
+
+| What it does | Why |
+|---|---|
+| Raises `STREAM_ALARM` to **maximum** while it rings, and restores the previous level on **every** exit path (`stopEverything`, `onDestroy`, the hard timeout) | this is the single change that turns "I didn't hear it" into "that woke me up". Borrowing the volume is only acceptable because it is always given back. |
+| Plays the tone itself: `MediaPlayer`, `USAGE_ALARM` + `CONTENT_TYPE_SONIFICATION`, `isLooping = true` | continuous sound rather than a notification's one-shot-with-a-repeat-flag, and the app gets to choose the tone |
+| Takes `AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE` | music and podcasts stop for the alarm instead of playing underneath it |
+| **Ramps** from 40 % to full over 10 s (configurable, 0 = straight to full) | loud enough to wake you, not loud enough to hurt if the phone is on the pillow. Done on the *player's* gain, not the stream: the stream is already at maximum, which is the point. |
+| Vibrates a repeating `VibrationEffect.createWaveform(..., repeat = 0)` with `VibrationAttributes.USAGE_ALARM` | a repeating waveform reads as an alarm; a one-shot pattern reads as a notification |
+| Optionally blinks the camera torch (`CameraManager.setTorchMode`) | for a phone face down or across the room. Opt-in. |
+| Holds a `PARTIAL_WAKE_LOCK` **with a timeout** | the tone cannot be cut short by the CPU idling, and a bug cannot leave the lock held |
+| Stops itself after `autoSilenceMinutes` + 15 s, capped at 15 min | whatever else goes wrong, the phone stops ringing |
+
+**The notification keeps its real job** — the buttons, and the full-screen intent that brings the
+alarm screen up over the lock screen. While the service is playing, that notification is posted
+on a new channel, **`call_reminders_ring`, which is deliberately silent and vibration-free**:
+otherwise the channel's tone would play on top of the service's. The service adopts it as its own
+foreground notification, so there is one thing on screen, not two.
+
+**The old channels are now the fallback.** Android 12+ can refuse a foreground-service start from
+the background. An exact alarm is one of the documented exemptions, so this should not happen —
+but if an OEM disagrees, `AlarmRingService.ring()` returns false and the caller falls back to the
+original insistent-notification path. Quieter, but it still rings. *A reminder that does not ring
+at all is the one unacceptable outcome*, so there is always a second path.
+
+#### Silent mode and Do Not Disturb
+
+`USAGE_ALARM` is what gets through a **silenced ringer** — that works with no permission at all,
+and it is the common case. A full **Do Not Disturb** is a separate grant: `setBypassDnd(true)`
+only sticks once the user has given the app notification-policy access, which no app can grant
+itself. The channels ask for it when the grant is present, and the reminders screen has a row
+that opens the system screen and shows whether it is in place. Without the grant everything
+still works, just not through DND.
+
+`setStreamVolume` also throws while DND is active without that access, so the volume takeover is
+wrapped — the tone then plays at the current level rather than not at all.
+
+### The tones
+
+Five tones ship in `features/callreminders/impl/src/main/res/raw/`, **all generated from
+scratch** by `tools/chagai/make_tones.py` (numpy synthesis → 16-bit WAV → Ogg Vorbis q6 via
+ffmpeg). Nothing sampled, nothing anybody else owns — which matters in an AGPL build, and means
+each one is built to loop seamlessly at a known loudness instead of being whatever a stock file
+happens to be.
+
+| Tone | id | Length | What it is |
+|---|---|---|---|
+| **Marimba Rise** *(default)* | `marimba_rise` | 6.4 s | A pentatonic arpeggio climbing through four passes, each louder and higher, over a low octave on the beat. Bright enough to pull your eyes to the phone, warm enough to wake up to. |
+| **Pulse** | `synth_pulse` | 4.8 s | Filtered saw stabs on every eighth with a rising siren glide and a tremolo. The one that will not be slept through. |
+| **Bell Cascade** | `bell_cascade` | 6.0 s | Tubular-bell strikes (the inharmonic 2.76 / 5.40 / 8.93 partials) falling down a scale and overlapping into a shimmer. |
+| **Old Telephone** | `retro_ring` | 4.0 s | Two close sine partials beating against each other, chopped at 22 Hz — the trill of a twin-bell handset. Deliberately not any network's standard cadence. |
+| **Sunrise** | `sunrise` | 8.0 s | A swelling pad with 1, then 2, then 4, then 8 notes on it. The *tone* escalates, so it feels more urgent even at a fixed volume. |
+| Phone's own alarm sound | `system_alarm` | — | `RingtoneManager.TYPE_ALARM`. For "the sound I already wake up to". |
+
+Three details that matter more than they look:
+
+- **Seamless loops.** The player loops, so a click at the seam would be audible every few
+  seconds and would quickly sound broken. Each tone is a whole number of beats long and is
+  cross-faded into its own head (`loop_seam`).
+- **Peak-normalised to −1 dBFS, then soft-limited.** Peak normalisation alone is not enough: a
+  struck marimba spends most of its loop decaying, so its *average* level — which is what
+  loudness actually sounds like — sat ~14 dB below the peak and read as thin on a phone speaker.
+  A `tanh` soft clipper brings the average up to −7…−10 dBFS with no audible distortion, because
+  it rounds the peaks off instead of squaring them. The drive is per tone, so Sunrise stays
+  genuinely quiet at the start and Pulse is pushed hard.
+- **Attention through movement, not harshness.** Everything here changes as it plays. A steady
+  tone is both easy to habituate to and unpleasant; a moving one is what the ear refuses to
+  ignore.
+
+Regenerate with:
+
+```bash
+python3 tools/chagai/make_tones.py           # all five
+python3 tools/chagai/make_tones.py --only alarm_marimba_rise
+```
+
+The ids in `AlarmTone.kt` and the file names in `res/raw` must stay in step; an unknown id in
+settings falls back to the default rather than ringing nothing.
+
+The picker previews on tap — `TonePreview`, four and a half seconds, no volume takeover, no
+vibration, stops itself. Choosing a tone in a quiet room should not blast the room. "Test the
+alarm" is the button that does the real, loud thing, through the real service.
 
 ### "Call now" never places a call
 
@@ -149,15 +229,23 @@ the user. The app therefore never needs — and never requests — `CALL_PHONE`.
   and is never lost.
 - **A quiet "next call reminder"** line in the shade, and a launcher long-press shortcut to the
   list.
-- **Settings**: ring in silent mode, escalation, gentle by default, send acknowledgements, show
-  the next reminder, snooze presets, and a **test-ring** button that rings the real alarm with a
-  throwaway reminder — so "will this actually wake me?" is answerable without waiting.
+- **Settings**, in two groups. *How loud it rings*: the tone picker (with preview), use full
+  alarm volume, fade-in, vibrate, blink the torch, ring in silent mode, a Do Not Disturb row that
+  opens the system grant screen, and a **test-ring** button that rings the real alarm with a
+  throwaway reminder through the real service — so "will this actually wake me?" is answerable
+  without waiting. *How the alarm behaves*: escalation, gentle by default, send
+  acknowledgements, show the next reminder, snooze presets.
 
 ## Permissions this adds
 
 `USE_EXACT_ALARM` (granted on install), `SCHEDULE_EXACT_ALARM` (Android 12 fallback only),
-`USE_FULL_SCREEN_INTENT`, `VIBRATE`, `WAKE_LOCK`, `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`.
-No `CALL_PHONE`, no `READ_CONTACTS`, nothing that reads anything.
+`USE_FULL_SCREEN_INTENT`, `VIBRATE`, `WAKE_LOCK`, `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`,
+and for the ring service `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`,
+`MODIFY_AUDIO_SETTINGS` and `ACCESS_NOTIFICATION_POLICY`.
+
+All of those are install-time or user-granted-in-settings. There is **no `CALL_PHONE`, no
+`READ_CONTACTS`, no `CAMERA`** — the torch blink uses `CameraManager.setTorchMode`, which needs
+no permission, and "Call now" uses `ACTION_DIAL`. Nothing here reads anything off the phone.
 
 ## Known limits
 
