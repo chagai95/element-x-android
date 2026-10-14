@@ -201,9 +201,19 @@ acknowledgements — there is nothing to acknowledge to.
 - **The event id arrives with the echo, not the send.** A brand-new note is marked sent
   immediately and picks up its event id when the timeline catches up. In the gap it shows as
   unconfirmed, which is accurate.
-- **Restoring an old version is not in the UI yet.** Every version is in the room (each edit is
-  an `m.replace`) and any client can show them, but the notes screen does not. Supernote had a
-  long-press-to-restore and it is worth bringing back.
+- **Version history and restore** (round 2, second pass). The editor keeps a local trail of what
+  a note said before — a version is captured when an editing session that *changed* the note
+  ends (the same "when the user is finished" moment that names an untitled note; capturing per
+  keystroke would make the history a keylogger), and when a remote edit overwrites different
+  local content. A collapsed **History (n)** section in the editor lists them with their times;
+  **Restore** puts an old version's content back through the normal edit path (so it syncs as an
+  ordinary `m.replace`) and pushes the current content onto the trail first, so a restore can
+  never lose anything — including restoring a restore. Colour, pin and reminder are deliberately
+  not part of a version: restoring what a note *said* should not un-pin it or resurrect a
+  dismissed alarm. The trail is capped at 20 and lives **only on the phone** (the wire format
+  never carries it); the room's `m.replace` chain remains the authoritative, unlimited,
+  cross-device history. `NotesStoreVersionsTest` pins every capture-or-not rule. This is
+  Supernote's long-press-to-restore, grown up a little.
 - **The live timeline is a window.** Very old notes are only read once the timeline has been
   paginated back far enough. In practice the store already has them from when they were written;
   this matters on a fresh install with a long history.
@@ -244,3 +254,38 @@ edges by hand.
 | `ui/NotesActivity.kt` | hosts both, and the date/time picker |
 | `ui/QuickCaptureActivity.kt` | the share sheet |
 | `src/test/.../NoteWireFormatTest.kt` | the format's contract |
+
+
+---
+
+## Round 3 (2026-10-14) — a note that cannot be lost
+
+`TEST-LOG-round3.md` has the detail. Four fixes, all in the "never lose what someone wrote" class:
+
+- **Typing while a note is being sent.** Sending is a network round-trip, and `markSent` cleared
+  `pending` unconditionally — so anything typed during it was marked as sent when it had not
+  been, and the echo of the older message later overwrote it. You would watch your own sentence
+  revert. `markSent` now takes the `updatedAtMillis` of the content that was actually sent and
+  only clears `pending` if the note still says that.
+- **Never make a second notes room.** `getJoinedRoom` returns null while the room list is still
+  syncing, which is exactly the state a cold start with pending notes is in. The old code read
+  that as "the user left" and created a fresh room, repointed the account data at it — which
+  propagates to every device — and orphaned every existing note. It now waits and retries.
+- **One create, not N.** A note's event id only arrives with the timeline echo, so for a few
+  seconds `eventId == null` means two different things: "never sent" and "sent, waiting".
+  `sentAtLeastOnce` tells them apart; without it every keystroke in that window queued another
+  create and the room collected copies.
+- **Versions that mean something.** The stored note keeps what the wire format drops — a trailing
+  newline, and the empty checklist row the editor needs so there is always somewhere to type the
+  next item. Comparing raw forms made the echo of the app's *own* message look like somebody
+  else's edit: it pushed a version nobody created and shoved a real one off the end of the
+  twenty-slot history. The comparison is now made on the normalised form.
+
+Plus two that are about the feel of it:
+
+- An editing session ends at `onPause` and was never restarted, so leaving the note to check
+  something else and coming back meant the rest of that sitting was never captured as a version.
+- Every keystroke wrote the whole notes file **and** cancelled two alarms **and** wrote the
+  reminders file — even for a note with no reminder, where there was nothing to cancel. With
+  version history the notes file is up to 21× larger per note, which turned a tolerable write
+  into a real one. Both paths return early when nothing has changed.

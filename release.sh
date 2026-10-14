@@ -197,6 +197,24 @@ if [ -d "$MIRROR" ]; then
   if git -C "$MIRROR" fetch -q "$HERE" \
       "refs/heads/chagai/main:refs/heads/chagai/main" "refs/tags/*:refs/tags/*" 2>/dev/null; then
     echo "  mirrored to the local bare repo"
+    # …and on to GitHub. Pushed from the MIRROR, not from here: this working copy is a
+    # blobless partial clone and pack-objects refuses to push from one. The mirror is
+    # complete, so it can. `fork` is chagai95/element-x-android; `origin` in the mirror is
+    # still upstream and is never pushed to. Never forced: only the fork's own branch and
+    # this release's own tag move, fast-forward or not at all.
+    #
+    # This matters beyond convenience — Element X is AGPL-3.0 and the About screen offers
+    # the source at that URL, so the repo has to carry whatever is installed.
+    if git -C "$MIRROR" remote get-url fork >/dev/null 2>&1; then
+      if git -C "$MIRROR" push -q fork \
+          "refs/heads/chagai/main:refs/heads/chagai/main" "refs/tags/${TAG}" 2>/dev/null; then
+        echo "  pushed chagai/main + ${TAG} to GitHub"
+      else
+        # The APK is already built, verified, published and reachable by this point; a
+        # failed push is a warning, not a reason to fail the release.
+        echo "  WARNING: could not push to GitHub (continuing)" >&2
+      fi
+    fi
   else
     echo "  WARNING: could not update the local bare mirror (continuing)" >&2
   fi

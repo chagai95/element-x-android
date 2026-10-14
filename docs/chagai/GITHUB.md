@@ -1,7 +1,45 @@
 # Publishing the fork on GitHub
 
-The fork is complete and tagged locally, with a full bare mirror beside it. What is missing is a
-place to push it to.
+**Done — the fork is published at <https://github.com/chagai95/element-x-android>.**
+
+`chagai/main` is the repository's default branch and every `v*-chagai` tag is there, so the
+AGPL-3.0 source-availability promise the About screen makes is actually kept: whatever is
+installed from https://chagai.website/matrix-chat/ can be read there.
+
+## How a release reaches it
+
+`./release.sh` pushes automatically, at the very end, after the APK is built, verified and
+published. Two details that are easy to get wrong:
+
+- **The push comes from the bare mirror**, `~/android-build/element-x-android.git`, not from the
+  working copy. The working copy is a **blobless partial clone** and `git push` refuses from one:
+  pack-objects will not lazily fetch the blobs it would have to walk. The mirror is complete, so
+  it can push, and it only ever sends the fork's own new objects.
+- **Remote names.** In the mirror, `fork` is `chagai95/element-x-android` and `origin` is still
+  **upstream** — `origin` is never pushed to. In the working copy, `origin` is the fork (for
+  `git ls-remote` and manual work) and `upstream` is element-hq. Nothing is ever force-pushed.
+
+Both repositories carry the key in `core.sshCommand`:
+
+```bash
+git config core.sshCommand "ssh -i ~/.ssh/id_ed25519_elementx_rw -o IdentitiesOnly=yes"
+```
+
+It is a **deploy key with write access on that one repository** — it cannot touch any other repo,
+which is exactly the blast radius wanted here.
+
+To push by hand:
+
+```bash
+git -C ~/android-build/element-x-android.git push fork chagai/main "refs/tags/v26.09.4-chagai.9"
+```
+
+Upstream keeps its screenshot baselines in Git LFS, which the blobless clone never pulled; nothing
+the fork changes is LFS-tracked, hence `lfs.allowincompletepush=true`.
+
+---
+
+## Historical: why it was not pushed until 2026-10-14
 
 ## Why it is not pushed yet
 
