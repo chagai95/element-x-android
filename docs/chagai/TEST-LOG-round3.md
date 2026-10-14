@@ -169,6 +169,48 @@ real one. Both paths now return early when nothing has changed.
 
 ---
 
+## Re-tested after the fixes (chagai.9 on the emulator)
+
+| | |
+|---|---|
+| Screen on and unlocked, reminder fires | **heads-up appears immediately** with Call now / Done / Snooze — it showed nothing at all before |
+| **Screen off**, reminder fires | the phone **wakes** (`Asleep` → `Awake`) and the full alarm screen is the top activity, 462 ms to displayed |
+| Alarm volume 2/7 → 7/7 while ringing, back to 2/7 | on Done **and** on Snooze |
+| Snooze 5 min | state `Snoozed`, `snoozedAtMillis` stamped, alarm re-armed for the new time, ring stopped |
+| Done from the shade | resolved, `resolvedAtMillis` stamped, ready to acknowledge |
+| `logcat` across the whole re-test | no `FATAL`, no `AndroidRuntime`, no ANR |
+
+The `logcat` line that tells the story:
+
+```
+START  …CallReminderAlarmActivity   from uid 10192
+Abort background activity starts from 10192          ← the direct start, still refused
+START  …CallReminderAlarmActivity   from uid 10192   ← the full-screen intent, which now works
+Displayed …CallReminderAlarmActivity: +462ms
+```
+
+The direct `startActivity` from the alarm receiver is still refused by the system, exactly as
+before — it is kept because it is the path that works when the app is already in the foreground.
+What changed is that the full-screen intent is no longer thrown away.
+
+---
+
+## Polish in chagai.10
+
+- The alarm screen shows the person's **initials** rather than a generic handset. Waking to "E"
+  reads as a person to call; a handset reads as the phone doing something at you. A reminder that
+  names no one keeps the handset.
+- A short confirming buzz when Done is tapped — the noise has just stopped, and without something
+  in the hand it is not obvious whether the tap landed.
+- The notification's snooze button said "Snooze 5 m…" because a notification action is clipped at
+  about ten characters. It says "+5 min".
+- The quiet "Next call reminder" line no longer advertises the reminder that is **ringing right
+  now**, which read as a second, stale one underneath the alarm.
+- A note with a checklist or a due time now also shows "Not synced yet" when it is only on this
+  phone. It was last in a `when`, so exactly the notes most worth knowing about never showed it.
+
+---
+
 ## Known, deliberately not fixed yet
 
 | | |

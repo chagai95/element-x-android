@@ -23,6 +23,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -64,6 +66,7 @@ fun CallReminderAlarmScreen(
     onOpenAllReminders: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val haptics = LocalHapticFeedback.current
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -83,12 +86,24 @@ fun CallReminderAlarmScreen(
                     .background(ElementTheme.colors.bgAccentRest, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = CompoundIcons.VoiceCall(),
-                    contentDescription = null,
-                    tint = ElementTheme.colors.iconOnSolidPrimary,
-                    modifier = Modifier.size(44.dp),
-                )
+                // Who, not what. Waking to someone's initials reads as a person to call; a
+                // generic handset reads as the phone doing something at you. The handset is kept
+                // for a reminder that names no one.
+                val initials = reminder.initials()
+                if (initials != null) {
+                    Text(
+                        text = initials,
+                        style = ElementTheme.typography.fontHeadingLgBold,
+                        color = ElementTheme.colors.textOnSolidPrimary,
+                    )
+                } else {
+                    Icon(
+                        imageVector = CompoundIcons.VoiceCall(),
+                        contentDescription = null,
+                        tint = ElementTheme.colors.iconOnSolidPrimary,
+                        modifier = Modifier.size(44.dp),
+                    )
+                }
             }
 
             Spacer(Modifier.height(24.dp))
@@ -154,7 +169,12 @@ fun CallReminderAlarmScreen(
             }
             OutlinedButton(
                 text = stringResource(R.string.call_reminders_action_done),
-                onClick = onDone,
+                // A short confirming buzz: the alarm has just stopped making noise, and without
+                // something in the hand it is not obvious the tap landed rather than missed.
+                onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onDone()
+                },
                 modifier = Modifier.fillMaxWidth(),
             )
 
@@ -253,4 +273,22 @@ internal fun CallReminderAlarmScreenPreview(
         onSilence = {},
         onOpenAllReminders = {},
     )
+}
+
+/**
+ * One or two initials for the person to call, or null when the reminder names no one.
+ *
+ * Deliberately letters only: a reminder whose "contact" is really a task ("Pick up the parcel")
+ * would otherwise show "PU", which means nothing, so anything that is not a plain name falls
+ * back to the handset.
+ */
+private fun CallReminder.initials(): String? {
+    val name = contact?.trim().orEmpty()
+    if (name.isEmpty()) return null
+    val words = name.split(' ', '\t').filter { it.isNotBlank() && it.first().isLetter() }
+    if (words.isEmpty()) return null
+    return when {
+        words.size == 1 -> words[0].take(1)
+        else -> words[0].take(1) + words[1].take(1)
+    }.uppercase()
 }

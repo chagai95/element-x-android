@@ -16,7 +16,8 @@
 
     <string name="call_reminders_action_call_now">Call now</string>
     <string name="call_reminders_action_done">Done</string>
-    <string name="call_reminders_action_snooze_minutes">Snooze %1$d min</string>
+    <!-- A notification action is clipped at about ten characters on a normal phone; "Snooze 5 min" came out as "Snooze 5 m…". -->
+    <string name="call_reminders_action_snooze_minutes">+%1$d min</string>
     <string name="call_reminders_action_snooze_tomorrow">Tomorrow at 9:00</string>
     <string name="call_reminders_action_open_chat">Open chat</string>
     <string name="call_reminders_action_silence">Silence</string>

@@ -312,13 +312,24 @@ private fun NoteCard(
     }
 }
 
-/** The line under a note: how many ticks are done, or when it is due, or nothing. */
+/**
+ * The line under a note: how many ticks are done, or when it is due, plus whether the room has
+ * seen it yet.
+ *
+ * "Not synced yet" used to be the *last* of these, so a note with a checklist or a due time
+ * never showed it — exactly the notes most worth knowing are only on this phone. It is appended
+ * now rather than competing for the line.
+ */
 @Composable
-private fun Note.footer(): String = when {
-    remindAtMillis != null -> io.element.android.features.notes.impl.parser.NoteWireFormat.formatTime(remindAtMillis)
-    hasChecklist -> stringResource(R.string.notes_checklist_progress, checkedCount, checklist.size)
-    isUnconfirmed -> stringResource(R.string.notes_not_synced)
-    else -> ""
+private fun Note.footer(): String {
+    val main = when {
+        remindAtMillis != null -> io.element.android.features.notes.impl.parser.NoteWireFormat.formatTime(remindAtMillis)
+        hasChecklist -> stringResource(R.string.notes_checklist_progress, checkedCount, checklist.size)
+        else -> ""
+    }
+    if (!isUnconfirmed) return main
+    val pending = stringResource(R.string.notes_not_synced)
+    return if (main.isEmpty()) pending else "$main · $pending"
 }
 
 @Composable

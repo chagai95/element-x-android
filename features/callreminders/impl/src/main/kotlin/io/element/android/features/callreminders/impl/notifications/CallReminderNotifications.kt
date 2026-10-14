@@ -302,7 +302,9 @@ object CallReminderNotifications {
     fun showNext(context: Context, reminder: CallReminder?) {
         ensureChannels(context)
         val manager = NotificationManagerCompat.from(context)
-        if (reminder == null) {
+        // A reminder that is ringing is not "next": showing "Call Elisheva · 09:17" underneath
+        // the alarm for Elisheva at 09:17 reads as a second, stale reminder.
+        if (reminder == null || reminder.state == CallReminder.State.Ringing) {
             manager.cancel(UPCOMING_NOTIFICATION_ID)
             return
         }
