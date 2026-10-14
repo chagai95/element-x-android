@@ -23,10 +23,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
@@ -34,6 +39,7 @@ import io.element.android.features.notes.impl.R
 import io.element.android.features.notes.impl.model.ChecklistItem
 import io.element.android.features.notes.impl.model.Note
 import io.element.android.features.notes.impl.model.NoteColour
+import io.element.android.features.notes.impl.model.NoteVersion
 import io.element.android.features.notes.impl.parser.NoteWireFormat
 import io.element.android.libraries.designsystem.components.button.BackButton
 import io.element.android.libraries.designsystem.theme.components.Icon
@@ -63,6 +69,7 @@ fun NoteEditorScreen(
     onTrash: () -> Unit,
     onPickReminder: () -> Unit,
     onClearReminder: () -> Unit,
+    onRestoreVersion: (NoteVersion) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -124,6 +131,11 @@ fun NoteEditorScreen(
 
             Spacer(Modifier.height(16.dp))
             ReminderRow(note, onPickReminder, onClearReminder)
+
+            if (note.versions.isNotEmpty()) {
+                Spacer(Modifier.height(16.dp))
+                HistorySection(note.versions, onRestoreVersion)
+            }
 
             Spacer(Modifier.height(16.dp))
             Text(
@@ -244,6 +256,97 @@ private fun ChecklistEditor(
         TextButton(
             text = stringResource(R.string.notes_editor_add_item),
             onClick = { onItemsChange(items + ChecklistItem("")) },
+        )
+    }
+}
+
+/**
+ * Earlier versions of the note, collapsed to one line until asked for.
+ *
+ * The long-press-to-restore Supernote had, grown up a little: every version shows when it was
+ * saved and what it said, and restoring keeps a copy of the current content, so nothing here can
+ * lose anything. Versions are captured when an editing session ends — not per keystroke — and
+ * live only on this phone; the room's own edit history is the cross-device copy.
+ */
+@Composable
+private fun HistorySection(versions: List<NoteVersion>, onRestore: (NoteVersion) -> Unit) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Icon(
+                imageVector = CompoundIcons.History(),
+                contentDescription = null,
+                tint = ElementTheme.colors.iconSecondary,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = stringResource(R.string.notes_editor_history, versions.size),
+                style = ElementTheme.typography.fontBodySmMedium,
+                color = ElementTheme.colors.textSecondary,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(
+                text = stringResource(
+                    if (expanded) R.string.notes_editor_history_hide else R.string.notes_editor_history_show
+                ),
+                onClick = { expanded = !expanded },
+            )
+        }
+        if (expanded) {
+            Text(
+                text = stringResource(R.string.notes_editor_history_subtitle),
+                style = ElementTheme.typography.fontBodyXsRegular,
+                color = ElementTheme.colors.textSecondary,
+            )
+            versions.forEach { version ->
+                Spacer(Modifier.height(8.dp))
+                VersionRow(version, onRestore)
+            }
+        }
+    }
+}
+
+@Composable
+private fun VersionRow(version: NoteVersion, onRestore: (NoteVersion) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = NoteWireFormat.formatTime(version.savedAtMillis),
+                style = ElementTheme.typography.fontBodyXsRegular,
+                color = ElementTheme.colors.textSecondary,
+            )
+            Text(
+                text = version.title.ifBlank { stringResource(R.string.notes_untitled) },
+                style = ElementTheme.typography.fontBodySmMedium,
+                color = ElementTheme.colors.textPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (version.body.isNotBlank()) {
+                Text(
+                    text = version.body,
+                    style = ElementTheme.typography.fontBodyXsRegular,
+                    color = ElementTheme.colors.textSecondary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (version.checklist.isNotEmpty()) {
+                Text(
+                    text = stringResource(
+                        R.string.notes_checklist_progress,
+                        version.checklist.count { it.done },
+                        version.checklist.size,
+                    ),
+                    style = ElementTheme.typography.fontBodyXsRegular,
+                    color = ElementTheme.colors.textSecondary,
+                )
+            }
+        }
+        TextButton(
+            text = stringResource(R.string.notes_action_restore_version),
+            onClick = { onRestore(version) },
         )
     }
 }
