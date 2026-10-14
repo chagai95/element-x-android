@@ -165,6 +165,10 @@ object CallReminderNotifications {
      * Shared by the ring service (which adopts it as its foreground notification, `silent = true`
      * because it is playing the tone itself) and by the fallback path (`silent = false`, where the
      * channel's own sound plus `FLAG_INSISTENT` is what rings).
+     *
+     * [alert] is a separate question from [silent]: a *first* post must be allowed to interrupt —
+     * that is what raises the alarm screen and the heads-up — while re-posting an alarm the user
+     * has already silenced must not drag the screen back up.
      */
     fun buildAlarmNotification(
         context: Context,
@@ -172,6 +176,7 @@ object CallReminderNotifications {
         gentle: Boolean,
         silent: Boolean,
         ongoing: Boolean = true,
+        alert: Boolean = true,
     ): Notification {
         ensureChannels(context)
         val channel = when {
@@ -199,14 +204,30 @@ object CallReminderNotifications {
             .setWhen(reminder.originalDueAtMillis)
             .setShowWhen(true)
             .setContentIntent(fullScreen)
-            // The full-screen intent is what brings the alarm screen up over the lock screen.
-            .setFullScreenIntent(fullScreen, true)
             // Re-posting a silenced alarm must not pop the heads-up again; a ringing one should
             // re-alert on every update.
-            .setOnlyAlertOnce(silent)
+            .setOnlyAlertOnce(!alert)
+            // A foreground-service notification is held back for ten seconds by default, which is
+            // ten seconds of a phone ringing with nothing on screen. An alarm is exactly the case
+            // the "immediate" behaviour exists for.
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+
+        if (alert) {
+            // The full-screen intent is what brings the alarm screen up over the lock screen.
+            // Only on a post that is allowed to interrupt: the system ignores it otherwise, and
+            // a silenced alarm that re-opened its own screen would be unsilenceable.
+            builder.setFullScreenIntent(fullScreen, true)
+        }
 
         if (silent) {
-            builder.setSilent(true)
+            // NOT NotificationCompat.setSilent(): that quietly moves the notification into the
+            // "silent" group with GROUP_ALERT_SUMMARY, and a group child whose summary is absent
+            // has *all* of its alerting suppressed — the heads-up and the full-screen intent
+            // included. That is why a real reminder used to ring loudly with nothing on screen
+            // while the test button, which starts the screen itself, looked fine.
+            // The ring channel already carries no sound and no vibration, so there is nothing
+            // here to suppress.
+            builder.setSound(null).setVibrate(null).setDefaults(0)
         } else {
             // Pre-O there are no channels, so the stream and the vibration are set here. From O
             // on these are ignored and the channel's own sound/attributes apply, which is why
@@ -218,11 +239,19 @@ object CallReminderNotifications {
             builder.setVibrate(if (gentle) GENTLE_VIBRATION else LOUD_VIBRATION)
         }
 
-        reminder.phone?.let { phone ->
+        if (reminder.phone != null) {
             builder.addAction(
                 0,
                 context.getString(R.string.call_reminders_action_call_now),
-                CallReminderActionReceiver.pendingIntent(context, reminder.id, CallReminderActionReceiver.ACTION_CALL, phone),
+                // An activity, not a broadcast: Android 12 drops an activity start that a
+                // notification tap routes through a receiver, which left this button marking the
+                // reminder "called" and never opening the dialer.
+                PendingIntent.getActivity(
+                    context,
+                    reminder.id.hashCode(),
+                    CallReminderAlarmActivity.intent(context, reminder.id, autoCall = true),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                ),
             )
         }
         builder.addAction(
@@ -258,8 +287,8 @@ object CallReminderNotifications {
      * Used on the fallback path (the ring service could not start) and to re-post a *silenced*
      * alarm so the screen and the buttons survive the noise stopping.
      */
-    fun showAlarm(context: Context, reminder: CallReminder, gentle: Boolean, silent: Boolean = false) {
-        val notification = buildAlarmNotification(context, reminder, gentle = gentle, silent = silent)
+    fun showAlarm(context: Context, reminder: CallReminder, gentle: Boolean, silent: Boolean = false, alert: Boolean = true) {
+        val notification = buildAlarmNotification(context, reminder, gentle = gentle, silent = silent, alert = alert)
         runCatching {
             NotificationManagerCompat.from(context).notify(notificationId(reminder), notification)
         }.onFailure { Timber.e(it, "Could not post the alarm notification (notifications permission?)") }

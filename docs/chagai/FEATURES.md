@@ -72,7 +72,10 @@ history, can be read in any Matrix client, and are shared by inviting someone to
 
 A grid of coloured, pinnable notes with checklists, instant in-memory search, trash and restore,
 a due time that rings through the full call-reminder alarm, share-sheet capture from any app, and
-launcher shortcuts.
+launcher shortcuts. Each note also keeps a **version history**: finishing an edit session that
+changed the note keeps what it said before, a History section in the editor shows the trail, and
+**Restore** brings an old version back without losing the current one. Versions live on the
+phone; the room's `m.replace` chain stays the authoritative cross-device history.
 
 Inspired feature-by-feature by Chagai's own 2019 note app, **Supernote** — `SUPERNOTE-INVENTORY.md`
 records what it had and what came across; `NOTES.md` is the design. Implemented in

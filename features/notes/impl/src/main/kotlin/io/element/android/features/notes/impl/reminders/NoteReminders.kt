@@ -51,9 +51,15 @@ object NoteReminders {
         val id = reminderId(note.id)
         val dueAt = note.remindAtMillis
 
+        val existing = reminderStore.get(id)
+
         if (dueAt == null || note.trashed || note.pending == Note.PendingAction.Delete) {
+            // Nothing to cancel and nothing stored: do no work at all. This runs on every
+            // keystroke in the editor, and two AlarmManager calls plus a file write per character
+            // is how a note app starts to feel slow.
+            if (existing == null) return
             scheduler.cancel(id)
-            reminderStore.get(id)?.let { CallReminderNotifications.cancelAlarm(context, it) }
+            CallReminderNotifications.cancelAlarm(context, existing)
             reminderStore.remove(id)
             return
         }
@@ -71,6 +77,24 @@ object NoteReminders {
             dueAtMillis = dueAt,
             originalDueAtMillis = dueAt,
         )
+        // Nothing has changed and the alarm is already armed: do no work. This matters because
+        // the editor calls straight through to here on every keystroke.
+        if (existing != null && existing.isOpen &&
+            existing.dueAtMillis == reminder.dueAtMillis &&
+            existing.title == reminder.title &&
+            existing.notes == reminder.notes
+        ) {
+            return
+        }
+        // A note's reminder id never changes, and the store deliberately refuses to move a
+        // reminder the user has already dealt with — right for one that came from a message,
+        // wrong here, where the user has just picked a new time for this note. Without clearing
+        // it first, setting a second reminder on a note silently did nothing at all.
+        if (existing != null) {
+            scheduler.cancel(id)
+            CallReminderNotifications.cancelAlarm(context, existing)
+            reminderStore.remove(id)
+        }
         reminderStore.upsert(reminder)?.let { scheduler.schedule(it) }
         CallReminderNotifications.showNext(context, reminderStore.open().firstOrNull())
     }

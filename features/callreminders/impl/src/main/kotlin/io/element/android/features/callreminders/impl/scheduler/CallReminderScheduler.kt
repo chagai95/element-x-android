@@ -84,16 +84,24 @@ class CallReminderScheduler(private val context: Context) {
     fun rescheduleAll(store: CallReminderStore) {
         val now = System.currentTimeMillis()
         store.open().forEach { reminder ->
-            if (reminder.dueAtMillis <= now) {
-                // Its moment passed while the phone was off. Ring now rather than never.
-                context.sendBroadcast(
-                    Intent(context, CallReminderAlarmReceiver::class.java).apply {
-                        action = CallReminderAlarmReceiver.ACTION_RING
-                        putExtra(CallReminderAlarmReceiver.EXTRA_REMINDER_ID, reminder.id)
-                    }
-                )
-            } else {
-                schedule(reminder)
+            when {
+                reminder.dueAtMillis > now -> schedule(reminder)
+                // Its moment passed while the phone was off, and recently enough that ringing now
+                // is still useful. Ring rather than never.
+                reminder.state == CallReminder.State.Scheduled &&
+                    now - reminder.dueAtMillis <= CATCH_UP_WINDOW_MILLIS -> {
+                    context.sendBroadcast(
+                        Intent(context, CallReminderAlarmReceiver::class.java).apply {
+                            action = CallReminderAlarmReceiver.ACTION_RING
+                            putExtra(CallReminderAlarmReceiver.EXTRA_REMINDER_ID, reminder.id)
+                        }
+                    )
+                }
+                // Overdue but already rung, or long past: leave it open and visible, and do not
+                // ring. Anything else turns a reminder the user once ignored into a klaxon that
+                // goes off every time they open the app, for ever — an alarm nobody can escape is
+                // worse than a missed one, and it is how people stop trusting a reminder app.
+                else -> Timber.d("Not re-ringing overdue reminder %s (%s)", reminder.id, reminder.state)
             }
         }
     }
@@ -124,4 +132,13 @@ class CallReminderScheduler(private val context: Context) {
         Intent(context, CallRemindersActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
+
+    private companion object {
+        /**
+         * How late a reminder may be and still be worth ringing about on the way back from a
+         * reboot. An hour matches the tolerance the message parser already applies to a reminder
+         * that arrives late.
+         */
+        const val CATCH_UP_WINDOW_MILLIS = 60 * 60 * 1000L
+    }
 }

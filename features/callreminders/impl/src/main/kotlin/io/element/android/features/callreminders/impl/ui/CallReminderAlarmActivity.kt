@@ -69,10 +69,16 @@ class CallReminderAlarmActivity : AppCompatActivity() {
         showOverLockScreen()
 
         reminderId = intent?.getStringExtra(EXTRA_REMINDER_ID)
-        if (reminderId == null || store.get(reminderId!!) == null) {
+        val opened = reminderId?.let(store::get)
+        if (opened == null) {
             Timber.w("Alarm screen opened without a known reminder; closing")
             finish()
             return
+        }
+        // Arrived from the notification's "Call now": dial straight away, then let the screen
+        // behind the dialer ask what happened.
+        if (intent?.getBooleanExtra(EXTRA_AUTO_CALL, false) == true) {
+            act(CallReminderActionReceiver.ACTION_CALL, phone = opened.phone)
         }
 
         setContent {
@@ -162,6 +168,8 @@ class CallReminderAlarmActivity : AppCompatActivity() {
             reminder = reminder,
             gentle = reminder.gentle || settings.gentleByDefault,
             silent = true,
+            // Already silenced by the user: keep the buttons, never pull the screen back up.
+            alert = false,
         )
     }
 
@@ -210,12 +218,24 @@ class CallReminderAlarmActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_REMINDER_ID = "reminder_id"
+        const val EXTRA_AUTO_CALL = "auto_call"
         private const val TOMORROW_MORNING_HOUR = 9
 
-        fun intent(context: Context, reminderId: String): Intent =
+        /**
+         * [autoCall] opens the dialer as soon as the screen is up.
+         *
+         * It exists for the notification's "Call now" button. That button cannot be a broadcast:
+         * since Android 12 an activity start that originates from a notification tap and is
+         * routed through a receiver is dropped as a "notification trampoline", so the old version
+         * marked the reminder as called and then silently never opened the dialer. Going straight
+         * to this activity is both allowed and better — the screen stays behind the dialer and
+         * asks "done, or remind you again?" when the call ends.
+         */
+        fun intent(context: Context, reminderId: String, autoCall: Boolean = false): Intent =
             Intent(context, CallReminderAlarmActivity::class.java).apply {
                 putExtra(EXTRA_REMINDER_ID, reminderId)
-                data = Uri.parse("matrixchat://reminder-alarm/$reminderId")
+                if (autoCall) putExtra(EXTRA_AUTO_CALL, true)
+                data = Uri.parse("matrixchat://reminder-alarm/$reminderId/${if (autoCall) "call" else "show"}")
                 addFlags(
                     Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_CLEAR_TOP or

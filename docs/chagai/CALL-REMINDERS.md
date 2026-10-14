@@ -260,3 +260,79 @@ no permission, and "Call now" uses `ACTION_DIAL`. Nothing here reads anything of
 - **Not yet built**: creating a reminder *from* the app (long-press a message → "remind me to call
   about this", or a `/call` composer command). Those touch upstream's message code, so they are a
   separate change; the loop for adding them is in `RELEASE.md`.
+
+
+---
+
+## Round 3 (2026-10-14) — the alarm you can actually see, and an answer the chat hears
+
+Full findings, with how to reproduce each one: **`TEST-LOG-round3.md`**. The three that matter:
+
+### A real reminder used to ring with nothing on screen
+
+The ring notification was built with `NotificationCompat.setSilent(true)` — the service plays the
+tone itself, so the notification must not play a second one. But `setSilent` does more than mute:
+it moves the notification into the "silent" group with `GROUP_ALERT_SUMMARY`, and the system
+suppresses **all** alerting for a group child whose summary is absent — the heads-up and
+**the full-screen intent** with it. The alarm screen was discarded before it ever reached the
+screen; the phone simply screamed with nothing to tap.
+
+It hid through two rounds because **"Test the alarm" is the one path that does not need the
+full-screen intent** — it starts the activity itself, from a visible activity, so the test always
+looked right. A real alarm has nothing else: an app may not start an activity from the background,
+which `logcat` says out loud (`Abort background activity starts`).
+
+So: the ring channel is kept silent by setting sound, vibration and defaults to none directly,
+never via `setSilent`. **Alerting is now a separate parameter from silence** (`alert`): the first
+post may interrupt and carries the full-screen intent; the re-post of an alarm the user has
+already silenced may not, so silencing stays silenced. And
+`setForegroundServiceBehavior(FOREGROUND_SERVICE_IMMEDIATE)`, because a foreground-service
+notification is otherwise held back for ten seconds — ten seconds of a ringing phone showing
+nothing.
+
+### The outcome now reaches the chat immediately
+
+`CallReminderAcknowledger` owns both the wire format and the sending. The receiver that handles
+the tap calls it directly, restoring the session if it is not in memory — the same mechanism the
+push layer uses to send a reply from the notification shade. The session observer's 30-second loop
+is now only the retry net.
+
+Before this, the acknowledgement could only be sent by that loop, inside a live session — and the
+tap nearly always happens with the app long since evicted from memory. "Done" sat on the phone
+until the app was next opened.
+
+### Three outcomes, not one
+
+```
+✅ Done 15:02 — Call reminder #42
+📞 Called 15:02 — Call reminder #42
+⏰ Snoozed to 15:20 — Call reminder #42
+```
+
+`Called` never fired before (the action did not record *when* it resolved, and the
+acknowledgement needs that). `Snoozed` did not exist at all, although the settings screen has
+always promised it. A snooze the **user** chose is reported; the app's own "nobody answered, ring
+again" re-arming is not — that is the app nagging, not a thing the user did, and it is told apart
+by `snoozedAtMillis`, which only the user's own action stamps.
+
+`matrix-os`' `bin/reminder-ack-watch.py` reads all three back into `reminders.sqlite`, keeps
+watching a snoozed reminder, and records the later Done over the top. **These three strings are a
+contract between two codebases** — `CallReminderAcknowledgementTest` pins them on this side,
+the watcher's regex on the other.
+
+### And four ways a reminder could be missed or faked
+
+- **An ignored reminder re-rang for ever.** Escalation running out of tries, or ringing with
+  escalation off, leaves a reminder open and overdue — and `rescheduleAll` rang anything open and
+  overdue, on every session start, every time the list was opened, and every reboot. Only a
+  reminder that has never rung, less than an hour late, is caught up now.
+- **The test ring was the trigger.** Walking away from it instead of answering left `test-ring`
+  in the store, open and overdue — so the button meant to reassure you armed that klaxon. It is
+  cleaned up when the screen is left.
+- **"Call now" in the shade never dialled.** It was a broadcast that then started an activity,
+  which Android 12 drops as a notification trampoline — so the reminder was marked called and no
+  dialer appeared. It now opens the alarm screen, which dials and then waits behind the call to
+  ask "done, or remind you again?".
+- **Anyone who could message you could hijack a reminder.** The id comes out of the message text
+  and was not tied to a room, so a stranger's `#42` merged over the real one. An id is now only
+  honoured within the room it first appeared in.

@@ -13,6 +13,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +54,9 @@ class NotesActivity : AppCompatActivity() {
 
     private lateinit var store: NotesStore
 
+    /** The note currently open in the editor, if any — see [onResume]. */
+    private var openInEditor: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         bindings<NotesBindings>().inject(this)
@@ -67,6 +71,7 @@ class NotesActivity : AppCompatActivity() {
         // Resolved here rather than inside the composition: creating a note writes to disk, and
         // a side effect in a composable initialiser is a trap waiting for the next person.
         val initialNoteId = openNoteId ?: if (startNew) createNote().id else null
+        initialNoteId?.let { store.beginEditing(it) }
 
         setContent {
             ElementThemeApp(
@@ -80,6 +85,10 @@ class NotesActivity : AppCompatActivity() {
                 var editingId by rememberSaveable { mutableStateOf(initialNoteId) }
                 var showingTrash by rememberSaveable { mutableStateOf(false) }
                 val editing = remember(notes, editingId) { notes.firstOrNull { it.id == editingId } }
+                // Kept outside the composition so onResume knows what is open: an editing session
+                // ends at onPause, and without restarting it here, coming back from another app
+                // mid-note meant the rest of that sitting was never captured as a version.
+                LaunchedEffect(editingId) { openInEditor = editingId }
 
                 if (editing != null) {
                     NoteEditorScreen(
@@ -105,14 +114,22 @@ class NotesActivity : AppCompatActivity() {
                             val cleared = store.edit(editing.id) { it.copy(remindAtMillis = null) }
                             cleared?.let { NoteReminders.schedule(this, it) }
                         },
+                        onRestoreVersion = { version -> store.restoreVersion(editing.id, version.savedAtMillis) },
                     )
                 } else {
                     NotesScreen(
                         notes = notes,
                         showingTrash = showingTrash,
                         onBack = { finish() },
-                        onOpen = { editingId = it.id },
-                        onNew = { editingId = createNote().id },
+                        onOpen = {
+                            store.beginEditing(it.id)
+                            editingId = it.id
+                        },
+                        onNew = {
+                            val created = createNote()
+                            store.beginEditing(created.id)
+                            editingId = created.id
+                        },
                         onToggleChecklistItem = { note, index ->
                             store.edit(note.id) { current ->
                                 val items = current.checklist.toMutableList()
@@ -140,9 +157,16 @@ class NotesActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        openInEditor?.let { store.beginEditing(it) }
+    }
+
     override fun onPause() {
-        // Leaving by the home button or the recents switcher is also "finished with it", so an
-        // untitled note is named here too, not only when Back is pressed.
+        // Leaving by the home button or the recents switcher is also "finished with it": open
+        // editing sessions end here (capturing a version if the note changed), and an untitled
+        // note is named here too, not only when Back is pressed.
+        store.finishAllEditing()
         store.all().filter { it.title.isBlank() && !it.isBlank }.forEach { store.finishEditing(it.id) }
         // The home-screen widget reads the same store, so it only has to be told to redraw. Done
         // on pause rather than on every keystroke: nothing on the home screen is visible while

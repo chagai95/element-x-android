@@ -44,6 +44,12 @@
     <string name="notes_editor_synced">Saved and synced to your server</string>
     <string name="notes_editor_not_synced">Saved on this phone — it will sync when there is a connection</string>
 
+    <string name="notes_editor_history">History (%1$d)</string>
+    <string name="notes_editor_history_show">Show</string>
+    <string name="notes_editor_history_hide">Hide</string>
+    <string name="notes_editor_history_subtitle">What this note said before, kept on this phone. Restoring keeps a copy of what it says now, so nothing is lost.</string>
+    <string name="notes_action_restore_version">Restore</string>
+
     <string name="notes_widget_description">Your pinned notes, and a button for a new one</string>
     <string name="notes_widget_empty">No notes yet. Tap + to write one.</string>
 </resources>
