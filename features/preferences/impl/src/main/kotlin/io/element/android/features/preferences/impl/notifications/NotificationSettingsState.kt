@@ -76,7 +76,11 @@ data class NotificationSettingsState(
 
     /**
      * Whether the advanced settings should be shown.
-     * This is true if the current push distributor is in a failure state or if there are multiple push distributors available.
+     * This is true if the current push distributor is in a failure state or if there is at least one push distributor available.
+     *
+     * Chagai fork: upstream hides the row whenever exactly one distributor exists and it is
+     * already selected, which also hides the only place that tells you *which* app is delivering
+     * your notifications. Showing it whenever there is anything to show is far easier to debug.
      */
-    val showAdvancedSettings: Boolean = currentPushDistributor.isFailure() || availablePushDistributors.size > 1
+    val showAdvancedSettings: Boolean = currentPushDistributor.isFailure() || availablePushDistributors.isNotEmpty()
 }

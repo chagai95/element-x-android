@@ -344,9 +344,9 @@ class DefaultPushServiceTest {
     }
 
     @Test
-    fun `ensurePusher - error when account is not verified`() = runTest {
+    fun `ensurePusher - error when the verification status is still unknown`() = runTest {
         val sessionVerificationService = FakeSessionVerificationService(
-            initialSessionVerifiedStatus = SessionVerifiedStatus.NotVerified
+            initialSessionVerifiedStatus = SessionVerifiedStatus.Unknown
         )
         val pushService = createDefaultPushService()
         val result = pushService.ensurePusherIsRegistered(
@@ -355,6 +355,30 @@ class DefaultPushServiceTest {
             )
         )
         assertThat(result.exceptionOrNull()!!).isInstanceOf(PusherRegistrationFailure.AccountNotVerified::class.java)
+    }
+
+    @Test
+    fun `ensurePusher - an unverified session still registers its pusher`() = runTest {
+        val registerLambda = lambdaRecorder<MatrixClient, Distributor, Result<Unit>> { _, _ -> Result.success(Unit) }
+        val aPushProvider = FakePushProvider(
+            index = 0,
+            name = "aFakePushProvider",
+            distributors = listOf(Distributor("aDistributorValue", "aDistributorName")),
+            registerWithResult = registerLambda,
+        )
+        val sessionVerificationService = FakeSessionVerificationService(
+            initialSessionVerifiedStatus = SessionVerifiedStatus.NotVerified
+        )
+        val pushService = createDefaultPushService(
+            pushProviders = setOf(aPushProvider),
+        )
+        val result = pushService.ensurePusherIsRegistered(
+            FakeMatrixClient(
+                sessionVerificationService = sessionVerificationService,
+            )
+        )
+        assertThat(result.isSuccess).isTrue()
+        registerLambda.assertions().isCalledOnce()
     }
 
     @Test

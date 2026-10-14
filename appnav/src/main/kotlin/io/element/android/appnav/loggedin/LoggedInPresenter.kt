@@ -43,7 +43,6 @@ import io.element.android.libraries.permissions.api.PermissionsPresenter
 import io.element.android.libraries.permissions.api.localnetwork.LocalNetworkPermissionAdvisor
 import io.element.android.libraries.permissions.api.localnetwork.LocalNetworkPermissionDialog
 import io.element.android.libraries.push.api.PushService
-import io.element.android.libraries.push.api.PusherRegistrationFailure
 import io.element.android.services.analytics.api.AnalyticsService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
@@ -78,27 +77,29 @@ class LoggedInPresenter(
         }.collectAsState(initial = false)
         val pusherRegistrationState = remember<MutableState<AsyncData<Unit>>> { mutableStateOf(AsyncData.Uninitialized) }
         LaunchedEffect(Unit) { preloadAccountManagementUrl() }
+        // chagai fork: registering the pusher no longer depends on the session being verified —
+        // a password-only session used to end up with no pusher on the homeserver at all, so the
+        // server had nowhere to send notifications and nothing said so.
+        suspend fun registerPusher() {
+            Timber.tag(pusherTag.value).d("Ensure pusher is registered")
+            pushService.ensurePusherIsRegistered(matrixClient).fold(
+                onSuccess = {
+                    Timber.tag(pusherTag.value).d("Pusher registered")
+                    pusherRegistrationState.value = AsyncData.Success(Unit)
+                },
+                onFailure = {
+                    Timber.tag(pusherTag.value).e(it, "Failed to register pusher")
+                    pusherRegistrationState.value = AsyncData.Failure(it)
+                },
+            )
+        }
         LaunchedEffect(Unit) {
             sessionVerificationService.sessionVerifiedStatus
                 .onEach { sessionVerifiedStatus ->
                     when (sessionVerifiedStatus) {
                         SessionVerifiedStatus.Unknown -> Unit
-                        SessionVerifiedStatus.Verified -> {
-                            Timber.tag(pusherTag.value).d("Ensure pusher is registered")
-                            pushService.ensurePusherIsRegistered(matrixClient).fold(
-                                onSuccess = {
-                                    Timber.tag(pusherTag.value).d("Pusher registered")
-                                    pusherRegistrationState.value = AsyncData.Success(Unit)
-                                },
-                                onFailure = {
-                                    Timber.tag(pusherTag.value).e(it, "Failed to register pusher")
-                                    pusherRegistrationState.value = AsyncData.Failure(it)
-                                },
-                            )
-                        }
-                        SessionVerifiedStatus.NotVerified -> {
-                            pusherRegistrationState.value = AsyncData.Failure(PusherRegistrationFailure.AccountNotVerified())
-                        }
+                        SessionVerifiedStatus.Verified,
+                        SessionVerifiedStatus.NotVerified -> registerPusher()
                     }
                 }
                 .launchIn(this)
