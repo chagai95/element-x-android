@@ -2,6 +2,10 @@
 
 Changes made in this fork, newest first.
 
+## 26.09.4-chagai.11 — 2026-10-14
+
+- Notifications now set themselves up. The app registers for push even if the session has not been verified yet, and it uses a push gateway the server can actually reach — the old one was unreachable from the server, so nothing was ever delivered. Settings -> Notifications now always shows which app is carrying your notifications.
+
 ## 26.09.4-chagai.10 — 2026-10-14
 
 - The alarm screen now shows who you are calling — their initials, their number and why — instead of a generic handset.
