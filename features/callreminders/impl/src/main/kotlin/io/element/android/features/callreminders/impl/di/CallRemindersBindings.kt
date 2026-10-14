@@ -8,16 +8,18 @@ package io.element.android.features.callreminders.impl.di
 
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
+import io.element.android.features.callreminders.impl.receivers.CallReminderActionReceiver
 import io.element.android.features.callreminders.impl.ui.CallReminderAlarmActivity
 import io.element.android.features.callreminders.impl.ui.CallRemindersActivity
 
 /**
- * The two activities this feature owns are started by the system (an alarm, a notification, a
- * launcher shortcut) rather than by app navigation, so they ask the application graph for what
- * they need instead of being constructed with it.
+ * The parts of this feature the system starts for us — an alarm, a notification button, a
+ * launcher shortcut — rather than app navigation, so they ask the application graph for what they
+ * need instead of being constructed with it.
  */
 @ContributesTo(AppScope::class)
 interface CallRemindersBindings {
     fun inject(activity: CallReminderAlarmActivity)
     fun inject(activity: CallRemindersActivity)
+    fun inject(receiver: CallReminderActionReceiver)
 }

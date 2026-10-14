@@ -24,7 +24,6 @@ import io.element.android.features.callreminders.impl.notifications.CallReminder
 import io.element.android.features.callreminders.impl.receivers.CallReminderActionReceiver
 import io.element.android.features.callreminders.impl.ring.AlarmRingService
 import io.element.android.features.callreminders.impl.ring.TonePreview
-import io.element.android.features.callreminders.impl.ui.CallReminderAlarmActivity
 import io.element.android.features.callreminders.impl.scheduler.CallReminderScheduler
 import io.element.android.features.callreminders.impl.store.CallReminderSettings
 import io.element.android.features.callreminders.impl.store.CallReminderStore
@@ -143,6 +142,15 @@ class CallRemindersActivity : AppCompatActivity() {
     override fun onPause() {
         // A tone preview must not follow the user out of the screen.
         TonePreview.stop()
+        // Nor must the test alarm. It is only cleaned up when the user answers it, so walking
+        // away from a test ring used to leave a permanently overdue, permanently open reminder
+        // in the store — which then re-rang every single time the app was opened.
+        CallReminderStore.get(this).get(CallReminderActionReceiver.TEST_REMINDER_ID)?.let {
+            AlarmRingService.stop(this)
+            CallReminderScheduler(this).cancel(it.id)
+            CallReminderNotifications.cancelAlarm(this, it)
+            CallReminderStore.get(this).remove(it.id)
+        }
         super.onPause()
     }
 

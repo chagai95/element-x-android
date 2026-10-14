@@ -64,6 +64,14 @@ class CallReminderStore private constructor(private val file: File) {
                 save(current + reminder)
                 reminder
             }
+            // A reminder id is read out of a message body, and anyone who can send you a message
+            // can write one. Without this, a stranger's "Call reminder #42" would quietly take
+            // over the real #42 — moving its time, its number and its title, so the call you
+            // actually had to make never rang. An id only ever means something within its room.
+            existing.roomId != reminder.roomId -> {
+                Timber.w("Ignoring a reminder claiming id %s from a different room", reminder.id)
+                null
+            }
             !existing.isOpen -> null
             existing.state == CallReminder.State.Snoozed -> null
             existing.dueAtMillis == reminder.dueAtMillis &&
@@ -95,6 +103,9 @@ class CallReminderStore private constructor(private val file: File) {
     }
 
     fun remove(id: String) = synchronized(lock) {
+        // Writing the whole file to remove something that was never there is pure cost, and this
+        // is called on every keystroke in the note editor by way of the note reminder code.
+        if (_reminders.value.none { it.id == id }) return@synchronized
         save(_reminders.value.filterNot { it.id == id })
     }
 

@@ -45,6 +45,11 @@ data class CallReminder(
     val escalationCount: Int = 0,
     /** Epoch millis the outcome was recorded. */
     val resolvedAtMillis: Long? = null,
+    /**
+     * Epoch millis the **user** pushed this reminder back, as opposed to the app re-arming it
+     * because nobody answered. Only a deliberate snooze is worth telling the chat about.
+     */
+    val snoozedAtMillis: Long? = null,
     /** True once the outcome has been posted back to the room. */
     val acknowledged: Boolean = false,
     /** Ring loudly (default) or gently. */
@@ -68,6 +73,19 @@ data class CallReminder(
     }
 
     val isOpen: Boolean get() = state == State.Scheduled || state == State.Snoozed || state == State.Ringing
+
+    /**
+     * There is an outcome the room has not been told about yet.
+     *
+     * A user-chosen snooze counts: the settings screen promises the chat is told about "done" and
+     * "snoozed" alike, and for a reminder that also reaches WhatsApp, "pushed to 15:20" is the
+     * difference between "he is on it" and silence.
+     */
+    val needsAcknowledgement: Boolean
+        get() = !acknowledged &&
+            roomId.isNotEmpty() &&
+            sessionId.isNotEmpty() &&
+            (resolvedAtMillis != null || (state == State.Snoozed && snoozedAtMillis != null))
 
     /** What to show as the person: an explicit contact, else the title itself. */
     val displayContact: String get() = contact ?: title

@@ -11,11 +11,15 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import dev.zacsweers.metro.Inject
+import io.element.android.features.callreminders.impl.di.CallRemindersBindings
 import io.element.android.features.callreminders.impl.model.CallReminder
 import io.element.android.features.callreminders.impl.notifications.CallReminderNotifications
 import io.element.android.features.callreminders.impl.ring.AlarmRingService
 import io.element.android.features.callreminders.impl.scheduler.CallReminderScheduler
+import io.element.android.features.callreminders.impl.session.CallReminderAcknowledger
 import io.element.android.features.callreminders.impl.store.CallReminderStore
+import io.element.android.libraries.architecture.bindings
 import timber.log.Timber
 
 /**
@@ -26,6 +30,8 @@ import timber.log.Timber
  * literally the same code path.
  */
 class CallReminderActionReceiver : BroadcastReceiver() {
+    @Inject lateinit var acknowledger: CallReminderAcknowledger
+
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getStringExtra(EXTRA_REMINDER_ID) ?: return
         val store = CallReminderStore.get(context)
@@ -54,6 +60,10 @@ class CallReminderActionReceiver : BroadcastReceiver() {
                         // A deliberate snooze is the user taking charge, so the nagging counter
                         // starts again from zero.
                         escalationCount = 0,
+                        // Stamped only here, never on the app's own re-arming, so the chat is
+                        // told "pushed to 15:20" when the user chose it and stays quiet when the
+                        // app is simply nagging.
+                        snoozedAtMillis = System.currentTimeMillis(),
                         acknowledged = false,
                     )
                 }
@@ -66,7 +76,15 @@ class CallReminderActionReceiver : BroadcastReceiver() {
             ACTION_CALL -> {
                 val phone = intent.getStringExtra(EXTRA_PHONE) ?: reminder.phone
                 stopRinging(context, store, scheduler, reminder)
-                store.update(id) { it.copy(state = CallReminder.State.Called, acknowledged = false) }
+                store.update(id) {
+                    it.copy(
+                        state = CallReminder.State.Called,
+                        // Without this the acknowledgement never fires: "📞 Called" is only sent
+                        // for a reminder that records when it was resolved.
+                        resolvedAtMillis = System.currentTimeMillis(),
+                        acknowledged = false,
+                    )
+                }
                 if (phone != null) {
                     // ACTION_DIAL, never ACTION_CALL: it opens the dialer with the number filled
                     // in and lets the user press the button. The app never needs, and never asks
@@ -86,6 +104,14 @@ class CallReminderActionReceiver : BroadcastReceiver() {
             scheduler.cancel(id)
             CallReminderNotifications.cancelAlarm(context, reminder)
             store.remove(id)
+        } else {
+            // Tell the room now, rather than whenever a session next happens to be alive. The tap
+            // nearly always happens with the app long since evicted from memory, which used to
+            // mean "Done" sat on the phone for hours or days while the chat showed nothing.
+            runCatching {
+                context.bindings<CallRemindersBindings>().inject(this)
+                acknowledger.flushSoon()
+            }.onFailure { Timber.w(it, "Could not acknowledge right away; the session loop will retry") }
         }
         // Collapse the shade so the user sees the result of what they just tapped.
         @Suppress("DEPRECATION")

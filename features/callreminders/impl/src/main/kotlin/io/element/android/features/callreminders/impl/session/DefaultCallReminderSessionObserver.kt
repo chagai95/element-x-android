@@ -13,7 +13,6 @@ import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
 import io.element.android.features.callreminders.api.CallReminderSessionObserver
-import io.element.android.features.callreminders.impl.model.CallReminder
 import io.element.android.features.callreminders.impl.notifications.CallReminderNotifications
 import io.element.android.features.callreminders.impl.parser.CallReminderParser
 import io.element.android.features.callreminders.impl.scheduler.CallReminderScheduler
@@ -21,7 +20,6 @@ import io.element.android.features.callreminders.impl.store.CallReminderSettings
 import io.element.android.features.callreminders.impl.store.CallReminderStore
 import io.element.android.libraries.di.annotations.ApplicationContext
 import io.element.android.libraries.matrix.api.MatrixClient
-import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.roomlist.LatestEventValue
 import io.element.android.libraries.matrix.api.roomlist.RoomList
 import io.element.android.libraries.matrix.api.roomlist.RoomSummary
@@ -34,9 +32,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -56,6 +51,7 @@ class DefaultCallReminderSessionObserver(
     @Assisted private val matrixClient: MatrixClient,
     @Assisted sessionCoroutineScope: CoroutineScope,
     @ApplicationContext private val context: Context,
+    private val acknowledger: CallReminderAcknowledger,
     dispatchers: CoroutineDispatchers,
 ) : CallReminderSessionObserver {
     @AssistedFactory
@@ -91,9 +87,8 @@ class DefaultCallReminderSessionObserver(
             .onEach { summaries -> summaries.forEach(::consider) }
             .launchIn(coroutineScope)
 
-        // Acknowledgements are sent on a slow loop rather than the instant the user taps, because
-        // the tap happens in a broadcast receiver that may well outlive the app process; this way
-        // the outcome is reported as soon as a session is alive again, and never lost.
+        // The slow loop is the safety net, not the mechanism: the receiver that handles the tap
+        // asks for a flush straight away. This catches whatever was offline at that moment.
         coroutineScope.launch {
             while (true) {
                 flushAcknowledgements()
@@ -123,37 +118,12 @@ class DefaultCallReminderSessionObserver(
         Timber.tag(TAG).d("Scheduled a call reminder from %s", summary.roomId.value)
     }
 
-    /**
-     * Posts the outcome of each resolved reminder back into the room it came from, so the same
-     * information reaches WhatsApp through the bridge and the server can record it.
-     *
-     * The text is written to be readable by a person and parseable by a script: the "#id" is the
-     * server's own reminder id when there was one.
-     */
+    /** See [CallReminderAcknowledger]: it owns both the wire format and the sending. */
     private suspend fun flushAcknowledgements() {
-        if (!settings.sendAcknowledgements) return
-        val pending = store.all().filter { !it.acknowledged && it.resolvedAtMillis != null && it.roomId.isNotEmpty() }
-        for (reminder in pending) {
-            val room = matrixClient.getJoinedRoom(RoomId(reminder.roomId)) ?: continue
-            val text = acknowledgementText(reminder) ?: continue
-            room.liveTimeline
-                .sendMessage(body = text, htmlBody = null, intentionalMentions = emptyList())
-                .onSuccess {
-                    store.update(reminder.id) { it.copy(acknowledged = true) }
-                    Timber.tag(TAG).d("Acknowledged reminder %s", reminder.id)
-                }
-                .onFailure { Timber.tag(TAG).w(it, "Could not acknowledge a reminder; will retry") }
-        }
-    }
-
-    private fun acknowledgementText(reminder: CallReminder): String? {
-        val reference = reminder.id.removePrefix("server-").let { if (reminder.id.startsWith("server-")) " #$it" else "" }
-        val at = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(reminder.resolvedAtMillis ?: return null))
-        return when (reminder.state) {
-            CallReminder.State.Done -> "✅ Done $at — Call reminder$reference"
-            CallReminder.State.Called -> "📞 Called $at — Call reminder$reference"
-            else -> null
-        }
+        // The receiver that handles the tap already asks for a flush; this is the retry net for
+        // anything that was offline or had no session at that moment.
+        runCatching { acknowledger.flush() }
+            .onFailure { Timber.tag(TAG).w(it, "An acknowledgement pass failed; will retry") }
     }
 
     private fun updateNextNotification() {

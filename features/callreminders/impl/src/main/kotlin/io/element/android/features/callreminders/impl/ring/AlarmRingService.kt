@@ -442,6 +442,8 @@ class AlarmRingService : Service() {
             reminder = reminder,
             gentle = CallReminderSettings.get(this).gentleByDefault,
             silent = true,
+            // Already silenced by the user: keep the buttons, never pull the screen back up.
+            alert = false,
         )
     }
 
