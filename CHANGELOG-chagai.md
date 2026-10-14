@@ -2,6 +2,12 @@
 
 Changes made in this fork, newest first.
 
+## 26.09.4-chagai.10 — 2026-10-14
+
+- The alarm screen now shows who you are calling — their initials, their number and why — instead of a generic handset.
+- A short buzz confirms Done, the snooze button in the notification is no longer cut off, and the quiet "next reminder" line no longer repeats the one that is ringing.
+- A note that is still only on this phone says so, even when it has a checklist or a due time.
+
 ## 26.09.4-chagai.9 — 2026-10-14
 
 - A reminder that fires now actually shows its alarm screen — before, it rang loudly with nothing on screen and no buttons to find.
