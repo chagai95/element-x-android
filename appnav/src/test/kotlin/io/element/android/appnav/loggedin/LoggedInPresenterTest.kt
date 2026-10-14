@@ -39,7 +39,6 @@ import io.element.android.libraries.matrix.test.verification.FakeSessionVerifica
 import io.element.android.libraries.permissions.test.FakeLocalNetworkPermissionAdvisor
 import io.element.android.libraries.permissions.test.FakePermissionsPresenterFactory
 import io.element.android.libraries.push.api.PushService
-import io.element.android.libraries.push.api.PusherRegistrationFailure
 import io.element.android.libraries.push.test.FakePushService
 import io.element.android.libraries.pushproviders.api.Distributor
 import io.element.android.libraries.pushproviders.api.PushProvider
@@ -169,7 +168,7 @@ class LoggedInPresenterTest {
     }
 
     @Test
-    fun `present - ensure default pusher is not registered if session is not verified`() = runTest {
+    fun `present - the pusher is registered even when the session is not verified`() = runTest {
         val lambda = lambdaRecorder<Result<Unit>> {
             Result.success(Unit)
         }
@@ -182,9 +181,8 @@ class LoggedInPresenterTest {
             sessionVerificationService = verificationService,
         ).test {
             val finalState = awaitFirstItem()
-            assertThat(finalState.pusherRegistrationState.errorOrNull())
-                .isInstanceOf(PusherRegistrationFailure.AccountNotVerified::class.java)
-            lambda.assertions().isNeverCalled()
+            assertThat(finalState.pusherRegistrationState.isSuccess()).isTrue()
+            lambda.assertions().isCalledOnce()
         }
     }
 

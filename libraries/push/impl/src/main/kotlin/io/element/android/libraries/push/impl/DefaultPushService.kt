@@ -89,10 +89,19 @@ class DefaultPushService(
     }
 
     override suspend fun ensurePusherIsRegistered(matrixClient: MatrixClient): Result<Unit> {
+        // chagai fork: upstream refuses to register a pusher until the session is verified, which
+        // silently leaves a password-only session with NO pusher on the homeserver forever — the
+        // server then has nowhere to send a notification and nothing in the UI says so.
+        // A pusher carries no secrets (the push format is event-id-only) and a not-yet-verified
+        // session can still show notifications, so only an *unknown* verification state is a
+        // reason to wait here.
         val verificationStatus = matrixClient.sessionVerificationService.sessionVerifiedStatus.first()
-        if (verificationStatus != SessionVerifiedStatus.Verified) {
+        if (verificationStatus == SessionVerifiedStatus.Unknown) {
             return Result.failure<Unit>(PusherRegistrationFailure.AccountNotVerified())
-                .also { Timber.w("Account is not verified") }
+                .also { Timber.w("Verification status is still unknown, waiting before registering the pusher") }
+        }
+        if (verificationStatus != SessionVerifiedStatus.Verified) {
+            Timber.w("Account is not verified, registering the pusher anyway so notifications still arrive")
         }
         Timber.d("Ensure pusher is registered")
         val currentPushProvider = getCurrentPushProvider(matrixClient.sessionId)

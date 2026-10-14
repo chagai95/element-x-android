@@ -33,7 +33,10 @@ object BuildTimeConfig {
     val BUG_REPORT_APP_NAME: String? = null
     const val PUSH_CONFIG_INCLUDE_FIREBASE: Boolean = true
     const val PUSH_CONFIG_INCLUDE_UNIFIED_PUSH: Boolean = true
-    val PUSHER_APP_ID_RELEASE: String? = null
-    val PUSHER_APP_ID_DEBUG: String? = null
-    val PUSHER_APP_ID_NIGHTLY: String? = null
+    // Chagai fork: the pusher the homeserver stores must be identified as THIS app, otherwise
+    // it is filed under upstream Element X's "im.vector.app.android" and the two builds fight
+    // over the same pusher slot when both are signed in to the same account.
+    val PUSHER_APP_ID_RELEASE: String? = "website.chagai.matrixchat"
+    val PUSHER_APP_ID_DEBUG: String? = "website.chagai.matrixchat.debug"
+    val PUSHER_APP_ID_NIGHTLY: String? = "website.chagai.matrixchat.nightly"
 }

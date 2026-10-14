@@ -12,6 +12,27 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class DefaultUnifiedPushGatewayUrlResolverTest {
+    // Chagai fork: when a gateway is forced (see UnifiedPushConfig.FORCED_PUSH_GATEWAY_HTTP_URL)
+    // it wins over every derivation below, because the gateway must be reachable by the
+    // homeserver and not merely by the phone. These helpers keep both behaviours covered.
+    private val forced = UnifiedPushConfig.FORCED_PUSH_GATEWAY_HTTP_URL
+
+    private fun expect(upstreamResult: String) = forced ?: upstreamResult
+
+    @Test
+    fun `a forced gateway wins over the one derived from the endpoint`() {
+        val sut = createDefaultUnifiedPushGatewayUrlResolver()
+        val result = sut.resolve(
+            gatewayResult = UnifiedPushGatewayResolverResult.Success("https://example.org/_matrix/push/v1/notify"),
+            instance = "",
+        )
+        if (forced != null) {
+            assertThat(result).isEqualTo(forced)
+        } else {
+            assertThat(result).isEqualTo("https://example.org/_matrix/push/v1/notify")
+        }
+    }
+
     @Test
     fun `resolve ErrorInvalidUrl returns the default gateway`() {
         val sut = createDefaultUnifiedPushGatewayUrlResolver()
@@ -19,7 +40,7 @@ class DefaultUnifiedPushGatewayUrlResolverTest {
             gatewayResult = UnifiedPushGatewayResolverResult.ErrorInvalidUrl,
             instance = "",
         )
-        assertThat(result).isEqualTo(A_UNIFIED_PUSH_GATEWAY)
+        assertThat(result).isEqualTo(expect(A_UNIFIED_PUSH_GATEWAY))
     }
 
     @Test
@@ -29,7 +50,7 @@ class DefaultUnifiedPushGatewayUrlResolverTest {
             gatewayResult = UnifiedPushGatewayResolverResult.NoMatrixGateway,
             instance = "",
         )
-        assertThat(result).isEqualTo(A_UNIFIED_PUSH_GATEWAY)
+        assertThat(result).isEqualTo(expect(A_UNIFIED_PUSH_GATEWAY))
     }
 
     @Test
@@ -39,7 +60,7 @@ class DefaultUnifiedPushGatewayUrlResolverTest {
             gatewayResult = UnifiedPushGatewayResolverResult.Success("aUrl"),
             instance = "",
         )
-        assertThat(result).isEqualTo("aUrl")
+        assertThat(result).isEqualTo(expect("aUrl"))
     }
 
     @Test
@@ -56,7 +77,7 @@ class DefaultUnifiedPushGatewayUrlResolverTest {
             gatewayResult = UnifiedPushGatewayResolverResult.Error("aUrl"),
             instance = "instance",
         )
-        assertThat(result).isEqualTo("aCurrentUrl")
+        assertThat(result).isEqualTo(expect("aCurrentUrl"))
     }
 
     @Test
@@ -73,7 +94,7 @@ class DefaultUnifiedPushGatewayUrlResolverTest {
             gatewayResult = UnifiedPushGatewayResolverResult.Error("aUrl"),
             instance = "instance",
         )
-        assertThat(result).isEqualTo(FakeDefaultPushGatewayHttpUrlProvider().provide())
+        assertThat(result).isEqualTo(expect(FakeDefaultPushGatewayHttpUrlProvider().provide()))
     }
 
     private fun createDefaultUnifiedPushGatewayUrlResolver(

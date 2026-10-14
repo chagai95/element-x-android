@@ -27,6 +27,9 @@ class DefaultUnifiedPushGatewayUrlResolver(
         gatewayResult: UnifiedPushGatewayResolverResult,
         instance: String,
     ): String {
+        // Chagai fork: see UnifiedPushConfig.FORCED_PUSH_GATEWAY_HTTP_URL — the gateway has to be
+        // reachable by the HOMESERVER, which is not the same thing as reachable by the phone.
+        UnifiedPushConfig.FORCED_PUSH_GATEWAY_HTTP_URL?.let { return it }
         return when (gatewayResult) {
             is UnifiedPushGatewayResolverResult.Error -> {
                 // Use previous gateway if any, or the default one

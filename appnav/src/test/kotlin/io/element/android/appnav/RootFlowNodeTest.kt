@@ -24,6 +24,7 @@ import io.element.android.appnav.intent.IntentResolver
 import io.element.android.appnav.root.RootNavStateFlowFactory
 import io.element.android.appnav.root.RootPresenter
 import io.element.android.appnav.session.FakeCallReminderSessionObserver
+import io.element.android.appnav.session.FakeNotesSessionObserver
 import io.element.android.appnav.session.FakeSyncOrchestratorFactory
 import io.element.android.appnav.session.MatrixSessionCache
 import io.element.android.features.login.api.LoginEntryPoint
@@ -130,6 +131,7 @@ class RootFlowNodeTest : RobolectricTest() {
             syncOrchestratorFactory = FakeSyncOrchestratorFactory(),
             analyticsService = FakeAnalyticsService(),
             callReminderSessionObserverFactory = FakeCallReminderSessionObserver.Factory(),
+            notesSessionObserverFactory = FakeNotesSessionObserver.Factory(),
         )
         val parentNode = FakeParentNode(
             graph = FakeNodeFactoriesBindings(
