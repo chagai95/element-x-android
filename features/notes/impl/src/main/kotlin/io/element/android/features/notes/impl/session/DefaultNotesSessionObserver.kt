@@ -121,7 +121,12 @@ class DefaultNotesSessionObserver(
             ?.let { ROOM_ID_REGEX.find(it)?.groupValues?.getOrNull(1) }
         if (stored != null) {
             matrixClient.getJoinedRoom(RoomId(stored))?.let { return it }
-            Timber.tag(TAG).w("The stored notes room is not joined any more; making a new one")
+            // Do NOT create a second room here. `getJoinedRoom` also returns null while the room
+            // list is still syncing, which is exactly the state this runs in on a cold start —
+            // and creating a room then would repoint the account data on every device and leave
+            // every existing note stranded in the old room. Wait and try again on the next pass.
+            Timber.tag(TAG).w("The notes room is not available yet; waiting rather than making another")
+            return null
         }
 
         val created = matrixClient.createRoom(
@@ -190,7 +195,7 @@ class DefaultNotesSessionObserver(
                         // The event id arrives with the echo rather than from the send, so the
                         // note is marked sent now and picks its id up from the timeline. Until
                         // then it simply shows as not yet confirmed.
-                        store.markSent(note.id, eventId = null)
+                        store.markSent(note.id, eventId = null, sentContentAtMillis = note.updatedAtMillis)
                         Timber.tag(TAG).d("Sent a new note")
                     }.onFailure { Timber.tag(TAG).w(it, "Could not send a note; will retry") }
                 }
@@ -202,7 +207,7 @@ class DefaultNotesSessionObserver(
                         htmlBody = null,
                         intentionalMentions = emptyList(),
                     ).onSuccess {
-                        store.markSent(note.id, eventId)
+                        store.markSent(note.id, eventId, sentContentAtMillis = note.updatedAtMillis)
                         Timber.tag(TAG).d("Updated a note")
                     }.onFailure { Timber.tag(TAG).w(it, "Could not update a note; will retry") }
                 }
@@ -212,7 +217,7 @@ class DefaultNotesSessionObserver(
                         eventOrTransactionId = EventOrTransactionId.Event(EventId(eventId)),
                         reason = null,
                     ).onSuccess {
-                        store.markSent(note.id, eventId)
+                        store.markSent(note.id, eventId, sentContentAtMillis = note.updatedAtMillis)
                         Timber.tag(TAG).d("Deleted a note")
                     }.onFailure { Timber.tag(TAG).w(it, "Could not delete a note; will retry") }
                 }

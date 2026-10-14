@@ -49,6 +49,26 @@ data class Note(
     val updatedAtMillis: Long = System.currentTimeMillis(),
     /** What still has to be sent to the room, if anything. */
     val pending: PendingAction? = null,
+    /**
+     * True once this note's message has actually been sent, even if its event id has not come
+     * back yet.
+     *
+     * The event id only arrives with the timeline echo, so for a few seconds after creating a
+     * note `eventId` is null for two quite different reasons: "never sent" and "sent, waiting".
+     * Without telling them apart, every keystroke in that window queued another *create* and the
+     * room ended up with several copies of the same note.
+     */
+    val sentAtLeastOnce: Boolean = false,
+    /**
+     * Earlier contents of this note, newest first — what "restore an old version" restores.
+     *
+     * Kept **on this phone only**: the wire format never carries them, because the room already
+     * has the authoritative history (every edit is an `m.replace` any client can show). This list
+     * exists so restoring works instantly and offline, the two things a trip to the timeline
+     * cannot promise. A version is captured when an editing session that changed the note ends,
+     * and when a remote edit overwrites what this phone had — not on every keystroke.
+     */
+    val versions: List<NoteVersion> = emptyList(),
 ) {
     /**
      * True while the server has not confirmed this note.
@@ -114,6 +134,24 @@ data class ChecklistItem(
     val text: String,
     val done: Boolean = false,
 )
+
+/**
+ * One earlier state of a note: the content a restore brings back, and nothing else.
+ *
+ * Colour, pin and reminder are deliberately not here — restoring what a note *said* should not
+ * also un-pin it or resurrect a long-dismissed alarm.
+ */
+@Serializable
+data class NoteVersion(
+    val title: String,
+    val body: String,
+    val checklist: List<ChecklistItem> = emptyList(),
+    /** When this content was last saved, which is what the history row shows. */
+    val savedAtMillis: Long,
+) {
+    fun matches(note: Note): Boolean =
+        title == note.title && body == note.body && checklist == note.checklist
+}
 
 /**
  * The colours a note can be.
