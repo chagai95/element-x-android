@@ -1,12 +1,12 @@
-# In progress: notes that live in Matrix
+# In progress: note version history
 
-Branch: `chagai/feat/notes-that-live-in-matrix`
-Started: 2026-10-13
+Branch: `chagai/feat/note-version-history`
+Started: 2026-10-14
 
 ## What it should do
 
-- notes that live in Matrix
+- note version history
 
 ## Changelog entry (paste into ./release.sh --notes)
 
-notes that live in Matrix
+note version history
