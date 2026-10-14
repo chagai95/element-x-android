@@ -2,6 +2,15 @@
 
 Changes made in this fork, newest first.
 
+## 26.09.4-chagai.9 — 2026-10-14
+
+- A reminder that fires now actually shows its alarm screen — before, it rang loudly with nothing on screen and no buttons to find.
+- Done, Called and Snoozed are reported straight back to the chat the moment you tap them, instead of waiting for the app to be opened.
+- "Call now" in the notification really opens the dialer now, and asks what happened when the call ends.
+- A reminder you once ignored no longer re-rings every time you open the app.
+- Notes remember what they said before: a History section shows earlier versions and Restore brings one back.
+- Notes can no longer be lost to a sync, duplicated, or stranded in a second notes room — and typing in one is a lot lighter.
+
 ## 26.09.4-chagai.8 — 2026-10-13
 
 - Dark-mode fix: a yellow note was coming out maroon (and the other colours were off too) when the phone is in dark mode. Note colours now have a proper dark-mode version each, so a yellow note is yellow at night — just not a torch. Found by looking at the real screen in night mode.
